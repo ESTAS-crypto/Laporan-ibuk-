@@ -2,55 +2,55 @@
 <html lang="id">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Generator Laporan Kunjungan Rumah</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.5.0/docx.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css" />
 </head>
 
 <body>
     <div class="container">
-        <h1>GENERATOR LAPORAN KUNJUNGAN RUMAH<br>PUSKESMAS BALAS KLUMPRIK</h1>
+        <h1>GENERATOR LAPORAN KUNJUNGAN RUMAH<br />PUSKESMAS BALAS KLUMPRIK</h1>
 
         <form id="laporanForm">
             <div class="form-group">
                 <label for="tanggal">Tanggal:</label>
-                <input type="date" id="tanggal" required>
+                <input type="date" id="tanggal" required />
             </div>
 
             <div class="row">
                 <div class="col">
                     <div class="form-group">
                         <label for="nama">Nama:</label>
-                        <input type="text" id="nama" required>
+                        <input type="text" id="nama" required />
                     </div>
                 </div>
                 <div class="col">
                     <div class="form-group">
                         <label for="usia">Usia (tahun):</label>
-                        <input type="number" id="usia" required>
+                        <input type="number" id="usia" required />
                     </div>
                 </div>
             </div>
 
             <div class="form-group">
                 <label for="alamat">Alamat:</label>
-                <input type="text" id="alamat" required>
+                <input type="text" id="alamat" required />
             </div>
 
             <div class="row">
                 <div class="col">
                     <div class="form-group">
                         <label for="beratBadan">Berat Badan (kg):</label>
-                        <input type="number" step="0.1" id="beratBadan" required>
+                        <input type="number" step="0.1" id="beratBadan" required />
                     </div>
                 </div>
                 <div class="col">
                     <div class="form-group">
                         <label for="tinggiBadan">Tinggi Badan (cm):</label>
-                        <input type="number" id="tinggiBadan" required>
+                        <input type="number" id="tinggiBadan" required />
                     </div>
                 </div>
             </div>
@@ -59,13 +59,13 @@
                 <div class="col">
                     <div class="form-group">
                         <label for="lingkarPerut">Lingkar Perut (cm):</label>
-                        <input type="number" id="lingkarPerut" required>
+                        <input type="number" id="lingkarPerut" required />
                     </div>
                 </div>
                 <div class="col">
                     <div class="form-group">
                         <label for="tensi">Tensi:</label>
-                        <input type="text" id="tensi" placeholder="contoh: 120/80" required>
+                        <input type="text" id="tensi" placeholder="contoh: 120/80" required />
                     </div>
                 </div>
             </div>
@@ -82,18 +82,20 @@
 
             <div class="form-group">
                 <label for="kader">Kader yang melakukan kunjungan rumah:</label>
-                <input type="text" id="kader" required>
+                <input type="text" id="kader" required />
             </div>
 
             <div class="form-group">
                 <label for="foto">Foto Geotag (opsional):</label>
-                <input type="file" id="foto" accept="image/*">
-                <div class="file-info">Foto akan dikompres otomatis (max 1200px, ≤300KB)</div>
+                <input type="file" id="foto" accept="image/*" />
+                <div class="file-info">
+                    Foto akan dikompres otomatis (max 1200px, ≤300KB)
+                </div>
                 <div class="photo-preview" id="photoPreview"></div>
             </div>
 
             <!-- Progress Bar -->
-            <div class="progress-container" id="progressContainer" style="display: none;">
+            <div class="progress-container" id="progressContainer" style="display: none">
                 <div class="progress-bar">
                     <div class="progress-fill" id="progressFill"></div>
                 </div>
@@ -101,8 +103,12 @@
                 <div class="progress-percentage" id="progressPercentage">0%</div>
             </div>
 
-            <div class="loading" id="loading" style="display: none;">Memproses foto dan membuat dokumen...</div>
-            <div class="success" id="success" style="display: none;">✓ Dokumen berhasil dibuat dan didownload!</div>
+            <div class="loading" id="loading" style="display: none">
+                Memproses foto dan membuat dokumen...
+            </div>
+            <div class="success" id="success" style="display: none">
+                ✓ Dokumen berhasil dibuat dan didownload!
+            </div>
 
             <button type="submit" id="generateBtn">Generate Word (.docx)</button>
         </form>

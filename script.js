@@ -1,4 +1,5 @@
 let compressedImageBlob = null;
+let processedImageData = null;
 
 // Progress tracking
 let currentProgress = 0;
@@ -32,13 +33,13 @@ function simulateProgress(targetStep) {
         if (currentStep) {
             const interval = setInterval(() => {
                 if (currentProgress < targetStep) {
-                    currentProgress += 1;
+                    currentProgress += 2;
                     updateProgress(currentProgress, currentStep.text);
                 } else {
                     clearInterval(interval);
                     resolve();
                 }
-            }, 50);
+            }, 30);
         } else {
             resolve();
         }
@@ -47,41 +48,48 @@ function simulateProgress(targetStep) {
 
 // Fungsi untuk mengompres gambar
 function compressImage(file, maxWidth = 1200, maxSize = 300000) {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         const img = new Image();
 
         img.onload = function() {
-            // Hitung ukuran baru
-            let { width, height } = img;
-            if (width > maxWidth) {
-                height = (height * maxWidth) / width;
-                width = maxWidth;
+            try {
+                // Hitung ukuran baru
+                let { width, height } = img;
+                if (width > maxWidth) {
+                    height = (height * maxWidth) / width;
+                    width = maxWidth;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+
+                // Gambar ke canvas
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // Kompres dengan kualitas bertahap
+                let quality = 0.9;
+                const tryCompress = () => {
+                    canvas.toBlob((blob) => {
+                        if (blob && (blob.size <= maxSize || quality <= 0.1)) {
+                            resolve(blob);
+                        } else if (blob) {
+                            quality -= 0.1;
+                            tryCompress();
+                        } else {
+                            reject(new Error('Failed to compress image'));
+                        }
+                    }, 'image/jpeg', quality);
+                };
+
+                tryCompress();
+            } catch (error) {
+                reject(error);
             }
-
-            canvas.width = width;
-            canvas.height = height;
-
-            // Gambar ke canvas
-            ctx.drawImage(img, 0, 0, width, height);
-
-            // Kompres dengan kualitas bertahap
-            let quality = 0.9;
-            const tryCompress = () => {
-                canvas.toBlob((blob) => {
-                    if (blob.size <= maxSize || quality <= 0.1) {
-                        resolve(blob);
-                    } else {
-                        quality -= 0.1;
-                        tryCompress();
-                    }
-                }, 'image/jpeg', quality);
-            };
-
-            tryCompress();
         };
 
+        img.onerror = () => reject(new Error('Failed to load image'));
         img.src = URL.createObjectURL(file);
     });
 }
@@ -99,6 +107,9 @@ document.getElementById('foto').addEventListener('change', async function(e) {
             // Kompres gambar
             compressedImageBlob = await compressImage(file);
 
+            // Convert to ArrayBuffer for docx
+            processedImageData = await compressedImageBlob.arrayBuffer();
+
             // Preview
             const img = document.createElement('img');
             img.src = URL.createObjectURL(compressedImageBlob);
@@ -112,14 +123,31 @@ document.getElementById('foto').addEventListener('change', async function(e) {
         } catch (error) {
             console.error('Error compressing image:', error);
             previewDiv.innerHTML = '<div style="color: red;">Error memproses gambar</div>';
+            compressedImageBlob = null;
+            processedImageData = null;
         } finally {
             loading.style.display = 'none';
         }
     } else {
         previewDiv.innerHTML = '';
         compressedImageBlob = null;
+        processedImageData = null;
     }
 });
+
+// Format tanggal sesuai contoh (dd-mm-yy)
+function formatDate(dateString) {
+    try {
+        const date = new Date(dateString);
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = String(date.getFullYear()).slice(-2);
+        return `${day}-${month}-${year}`;
+    } catch (error) {
+        console.error('Error formatting date:', error);
+        return dateString;
+    }
+}
 
 // Generate laporan
 document.getElementById('laporanForm').addEventListener('submit', async function(e) {
@@ -160,7 +188,7 @@ document.getElementById('laporanForm').addEventListener('submit', async function
         };
 
         // Step 3: Proses foto jika ada
-        if (compressedImageBlob) {
+        if (processedImageData) {
             await simulateProgress(40);
         } else {
             currentProgress = 40;
@@ -170,43 +198,178 @@ document.getElementById('laporanForm').addEventListener('submit', async function
         // Step 4: Buat dokumen Word
         await simulateProgress(60);
 
-        // Format tanggal sesuai contoh (dd-mm-yy)
-        const dateObj = new Date(formData.tanggal);
-        const formattedDate = dateObj.toLocaleDateString('id-ID', {
-            day: '2-digit',
-            month: '2-digit',
-            year: '2-digit'
-        });
+        const formattedDate = formatDate(formData.tanggal);
 
-        // Buat dokumen Word dengan format yang sama persis seperti contoh
+        // Buat paragraf untuk data hasil
+        const createDataParagraphs = () => {
+            const paragraphs = [];
+
+            // Data dasar
+            paragraphs.push(
+                new docx.Paragraph({
+                    children: [new docx.TextRun({ text: `Nama : ${formData.nama}`, size: 22 })],
+                    spacing: { after: 120 }
+                }),
+                new docx.Paragraph({
+                    children: [new docx.TextRun({ text: `Usia : ${formData.usia} th`, size: 22 })],
+                    spacing: { after: 120 }
+                }),
+                new docx.Paragraph({
+                    children: [new docx.TextRun({ text: `Alamat : ${formData.alamat}`, size: 22 })],
+                    spacing: { after: 120 }
+                }),
+                new docx.Paragraph({
+                    children: [new docx.TextRun({ text: `Bb : ${formData.beratBadan} Kg`, size: 22 })],
+                    spacing: { after: 120 }
+                }),
+                new docx.Paragraph({
+                    children: [new docx.TextRun({ text: `Tb : ${formData.tinggiBadan} cm`, size: 22 })],
+                    spacing: { after: 120 }
+                }),
+                new docx.Paragraph({
+                    children: [new docx.TextRun({ text: `Lp : ${formData.lingkarPerut} cm`, size: 22 })],
+                    spacing: { after: 120 }
+                }),
+                new docx.Paragraph({
+                    children: [new docx.TextRun({ text: `Tensi : ${formData.tensi}`, size: 22 })],
+                    spacing: { after: 240 }
+                })
+            );
+
+            // Spacing kosong
+            paragraphs.push(
+                new docx.Paragraph({
+                    children: [new docx.TextRun({ text: " ", size: 22 })],
+                    spacing: { after: 120 }
+                }),
+                new docx.Paragraph({
+                    children: [new docx.TextRun({ text: " ", size: 22 })],
+                    spacing: { after: 120 }
+                })
+            );
+
+            // Keluhan
+            paragraphs.push(
+                new docx.Paragraph({
+                    children: [new docx.TextRun({ text: "Keluhan / Permasalahan :", size: 22 })],
+                    spacing: { after: 120 }
+                }),
+                new docx.Paragraph({
+                    children: [new docx.TextRun({ text: " ", size: 22 })],
+                    spacing: { after: 120 }
+                }),
+                new docx.Paragraph({
+                    children: [new docx.TextRun({ text: formData.keluhan, size: 22 })],
+                    spacing: { after: 240 }
+                })
+            );
+
+            // Spacing kosong
+            paragraphs.push(
+                new docx.Paragraph({
+                    children: [new docx.TextRun({ text: " ", size: 22 })],
+                    spacing: { after: 120 }
+                }),
+                new docx.Paragraph({
+                    children: [new docx.TextRun({ text: " ", size: 22 })],
+                    spacing: { after: 120 }
+                })
+            );
+
+            // Tindak Lanjut
+            paragraphs.push(
+                new docx.Paragraph({
+                    children: [new docx.TextRun({ text: "Tindak Lanjut :", size: 22 })],
+                    spacing: { after: 120 }
+                }),
+                new docx.Paragraph({
+                    children: [new docx.TextRun({ text: " ", size: 22 })],
+                    spacing: { after: 120 }
+                }),
+                new docx.Paragraph({
+                    children: [new docx.TextRun({ text: formData.tindakLanjut, size: 22 })],
+                    spacing: { after: 120 }
+                })
+            );
+
+            return paragraphs;
+        };
+
+        // Buat cell foto
+        const createPhotoCell = () => {
+            if (!processedImageData) {
+                return [
+                    new docx.Paragraph({
+                        children: [new docx.TextRun({ text: " ", size: 200 })],
+                        spacing: { after: 240 }
+                    })
+                ];
+            }
+
+            try {
+                return [
+                    new docx.Paragraph({
+                        children: [
+                            new docx.ImageRun({
+                                data: processedImageData,
+                                transformation: {
+                                    width: 167, // 2.31875 inches * 72 points/inch
+                                    height: 248, // 3.45 inches * 72 points/inch
+                                }
+                            })
+                        ],
+                        alignment: docx.AlignmentType.CENTER
+                    })
+                ];
+            } catch (error) {
+                console.error('Error adding image to document:', error);
+                return [
+                    new docx.Paragraph({
+                        children: [new docx.TextRun({ text: "(Foto tidak dapat diproses)", size: 22 })],
+                        alignment: docx.AlignmentType.CENTER
+                    })
+                ];
+            }
+        };
+
+        // Step 5: Proses gambar untuk dokumen
+        if (processedImageData) {
+            await simulateProgress(80);
+        } else {
+            currentProgress = 80;
+            updateProgress(80, "Menyelesaikan dokumen...");
+        }
+
+        // Buat dokumen Word dengan struktur yang tepat
         const doc = new docx.Document({
             sections: [{
                 properties: {
                     page: {
                         margin: {
-                            top: 720, // 0.5 inch
-                            right: 720, // 0.5 inch
-                            bottom: 720, // 0.5 inch
-                            left: 720, // 0.5 inch
+                            top: 720,
+                            right: 720,
+                            bottom: 720,
+                            left: 720,
                         },
                     },
                 },
                 children: [
-                    // Header Table
+                    // Main Content Table
                     new docx.Table({
                         width: {
                             size: 100,
                             type: docx.WidthType.PERCENTAGE,
                         },
                         borders: {
-                            top: { style: docx.BorderStyle.SINGLE, size: 1 },
-                            bottom: { style: docx.BorderStyle.SINGLE, size: 1 },
-                            left: { style: docx.BorderStyle.SINGLE, size: 1 },
-                            right: { style: docx.BorderStyle.SINGLE, size: 1 },
-                            insideHorizontal: { style: docx.BorderStyle.SINGLE, size: 1 },
-                            insideVertical: { style: docx.BorderStyle.SINGLE, size: 1 }
+                            top: { style: docx.BorderStyle.SINGLE, size: 1, color: "000000" },
+                            bottom: { style: docx.BorderStyle.SINGLE, size: 1, color: "000000" },
+                            left: { style: docx.BorderStyle.SINGLE, size: 1, color: "000000" },
+                            right: { style: docx.BorderStyle.SINGLE, size: 1, color: "000000" },
+                            insideHorizontal: { style: docx.BorderStyle.SINGLE, size: 1, color: "000000" },
+                            insideVertical: { style: docx.BorderStyle.SINGLE, size: 1, color: "000000" }
                         },
                         rows: [
+                            // Header table dalam cell pertama
                             new docx.TableRow({
                                 children: [
                                     new docx.TableCell({
@@ -214,13 +377,32 @@ document.getElementById('laporanForm').addEventListener('submit', async function
                                             new docx.Paragraph({
                                                 children: [
                                                     new docx.TextRun({
-                                                        text: "LAPORAN\nKUNJUNGAN\nRUMAH",
+                                                        text: "LAPORAN",
                                                         bold: true,
                                                         size: 24
                                                     })
                                                 ],
-                                                alignment: docx.AlignmentType.CENTER,
-                                                spacing: { line: 360 }
+                                                alignment: docx.AlignmentType.CENTER
+                                            }),
+                                            new docx.Paragraph({
+                                                children: [
+                                                    new docx.TextRun({
+                                                        text: "KUNJUNGAN",
+                                                        bold: true,
+                                                        size: 24
+                                                    })
+                                                ],
+                                                alignment: docx.AlignmentType.CENTER
+                                            }),
+                                            new docx.Paragraph({
+                                                children: [
+                                                    new docx.TextRun({
+                                                        text: "RUMAH",
+                                                        bold: true,
+                                                        size: 24
+                                                    })
+                                                ],
+                                                alignment: docx.AlignmentType.CENTER
                                             })
                                         ],
                                         width: { size: 20, type: docx.WidthType.PERCENTAGE },
@@ -231,13 +413,63 @@ document.getElementById('laporanForm').addEventListener('submit', async function
                                             new docx.Paragraph({
                                                 children: [
                                                     new docx.TextRun({
-                                                        text: "PUSKESMAS\nBALAS\nKLUMPRIK\n\nBULAN\nAGUSTUS\nTAHUN 2025",
+                                                        text: "PUSKESMAS",
+                                                        bold: true,
+                                                        size: 24
+                                                    })
+                                                ],
+                                                alignment: docx.AlignmentType.CENTER
+                                            }),
+                                            new docx.Paragraph({
+                                                children: [
+                                                    new docx.TextRun({
+                                                        text: "BALAS",
+                                                        bold: true,
+                                                        size: 24
+                                                    })
+                                                ],
+                                                alignment: docx.AlignmentType.CENTER
+                                            }),
+                                            new docx.Paragraph({
+                                                children: [
+                                                    new docx.TextRun({
+                                                        text: "KLUMPRIK",
                                                         bold: true,
                                                         size: 24
                                                     })
                                                 ],
                                                 alignment: docx.AlignmentType.CENTER,
-                                                spacing: { line: 360 }
+                                                spacing: { after: 240 }
+                                            }),
+                                            new docx.Paragraph({
+                                                children: [
+                                                    new docx.TextRun({
+                                                        text: "BULAN",
+                                                        bold: true,
+                                                        size: 24
+                                                    })
+                                                ],
+                                                alignment: docx.AlignmentType.CENTER
+                                            }),
+                                            new docx.Paragraph({
+                                                children: [
+                                                    new docx.TextRun({
+                                                        text: "AGUSTUS",
+                                                        bold: true,
+                                                        size: 24
+                                                    })
+                                                ],
+                                                alignment: docx.AlignmentType.CENTER
+                                            }),
+                                            new docx.Paragraph({
+                                                children: [
+                                                    new docx.TextRun({
+                                                        text: "TAHUN 2025",
+                                                        bold: true,
+                                                        size: 24
+                                                    })
+                                                ],
+                                                alignment: docx.AlignmentType.CENTER
                                             })
                                         ],
                                         width: { size: 30, type: docx.WidthType.PERCENTAGE },
@@ -246,44 +478,14 @@ document.getElementById('laporanForm').addEventListener('submit', async function
                                     new docx.TableCell({
                                         children: [
                                             new docx.Paragraph({
-                                                children: [
-                                                    new docx.TextRun({
-                                                        text: " ",
-                                                        size: 24
-                                                    })
-                                                ],
-                                                spacing: { line: 360 }
+                                                children: [new docx.TextRun({ text: " ", size: 24 })]
                                             })
                                         ],
                                         width: { size: 50, type: docx.WidthType.PERCENTAGE }
                                     })
                                 ]
-                            })
-                        ]
-                    }),
-
-                    // Spacing
-                    new docx.Paragraph({
-                        children: [new docx.TextRun({ text: " " })],
-                        spacing: { after: 240 }
-                    }),
-
-                    // Main Content Table
-                    new docx.Table({
-                        width: {
-                            size: 100,
-                            type: docx.WidthType.PERCENTAGE,
-                        },
-                        borders: {
-                            top: { style: docx.BorderStyle.SINGLE, size: 1 },
-                            bottom: { style: docx.BorderStyle.SINGLE, size: 1 },
-                            left: { style: docx.BorderStyle.SINGLE, size: 1 },
-                            right: { style: docx.BorderStyle.SINGLE, size: 1 },
-                            insideHorizontal: { style: docx.BorderStyle.SINGLE, size: 1 },
-                            insideVertical: { style: docx.BorderStyle.SINGLE, size: 1 }
-                        },
-                        rows: [
-                            // Header row
+                            }),
+                            // Header row untuk data
                             new docx.TableRow({
                                 children: [
                                     new docx.TableCell({
@@ -355,16 +557,11 @@ document.getElementById('laporanForm').addEventListener('submit', async function
                             // Data row
                             new docx.TableRow({
                                 children: [
-                                    // NO cell (empty dengan space besar)
+                                    // NO cell (kosong)
                                     new docx.TableCell({
                                         children: [
                                             new docx.Paragraph({
-                                                children: [
-                                                    new docx.TextRun({
-                                                        text: " ",
-                                                        size: 400 // Large space
-                                                    })
-                                                ]
+                                                children: [new docx.TextRun({ text: " ", size: 200 })]
                                             })
                                         ],
                                         verticalAlign: docx.VerticalAlign.CENTER
@@ -386,165 +583,12 @@ document.getElementById('laporanForm').addEventListener('submit', async function
                                     }),
                                     // HASIL cell
                                     new docx.TableCell({
-                                        children: [
-                                            new docx.Paragraph({
-                                                children: [
-                                                    new docx.TextRun({
-                                                        text: `Nama : ${formData.nama}`,
-                                                        size: 22
-                                                    })
-                                                ],
-                                                spacing: { after: 120 }
-                                            }),
-                                            new docx.Paragraph({
-                                                children: [
-                                                    new docx.TextRun({
-                                                        text: `Usia : ${formData.usia} th`,
-                                                        size: 22
-                                                    })
-                                                ],
-                                                spacing: { after: 120 }
-                                            }),
-                                            new docx.Paragraph({
-                                                children: [
-                                                    new docx.TextRun({
-                                                        text: `Alamat : ${formData.alamat}`,
-                                                        size: 22
-                                                    })
-                                                ],
-                                                spacing: { after: 120 }
-                                            }),
-                                            new docx.Paragraph({
-                                                children: [
-                                                    new docx.TextRun({
-                                                        text: `Bb : ${formData.beratBadan} Kg`,
-                                                        size: 22
-                                                    })
-                                                ],
-                                                spacing: { after: 120 }
-                                            }),
-                                            new docx.Paragraph({
-                                                children: [
-                                                    new docx.TextRun({
-                                                        text: `Tb : ${formData.tinggiBadan} cm`,
-                                                        size: 22
-                                                    })
-                                                ],
-                                                spacing: { after: 120 }
-                                            }),
-                                            new docx.Paragraph({
-                                                children: [
-                                                    new docx.TextRun({
-                                                        text: `Lp : ${formData.lingkarPerut} cm`,
-                                                        size: 22
-                                                    })
-                                                ],
-                                                spacing: { after: 120 }
-                                            }),
-                                            new docx.Paragraph({
-                                                children: [
-                                                    new docx.TextRun({
-                                                        text: `Tensi : ${formData.tensi}`,
-                                                        size: 22
-                                                    })
-                                                ],
-                                                spacing: { after: 240 }
-                                            }),
-                                            new docx.Paragraph({
-                                                children: [
-                                                    new docx.TextRun({
-                                                        text: " ",
-                                                        size: 22
-                                                    })
-                                                ],
-                                                spacing: { after: 120 }
-                                            }),
-                                            new docx.Paragraph({
-                                                children: [
-                                                    new docx.TextRun({
-                                                        text: " ",
-                                                        size: 22
-                                                    })
-                                                ],
-                                                spacing: { after: 120 }
-                                            }),
-                                            new docx.Paragraph({
-                                                children: [
-                                                    new docx.TextRun({
-                                                        text: "Keluhan / Permasalahan :",
-                                                        size: 22
-                                                    })
-                                                ],
-                                                spacing: { after: 120 }
-                                            }),
-                                            new docx.Paragraph({
-                                                children: [
-                                                    new docx.TextRun({
-                                                        text: " ",
-                                                        size: 22
-                                                    })
-                                                ],
-                                                spacing: { after: 120 }
-                                            }),
-                                            new docx.Paragraph({
-                                                children: [
-                                                    new docx.TextRun({
-                                                        text: formData.keluhan,
-                                                        size: 22
-                                                    })
-                                                ],
-                                                spacing: { after: 240 }
-                                            }),
-                                            new docx.Paragraph({
-                                                children: [
-                                                    new docx.TextRun({
-                                                        text: " ",
-                                                        size: 22
-                                                    })
-                                                ],
-                                                spacing: { after: 120 }
-                                            }),
-                                            new docx.Paragraph({
-                                                children: [
-                                                    new docx.TextRun({
-                                                        text: " ",
-                                                        size: 22
-                                                    })
-                                                ],
-                                                spacing: { after: 120 }
-                                            }),
-                                            new docx.Paragraph({
-                                                children: [
-                                                    new docx.TextRun({
-                                                        text: "Tindak Lanjut :",
-                                                        size: 22
-                                                    })
-                                                ],
-                                                spacing: { after: 120 }
-                                            }),
-                                            new docx.Paragraph({
-                                                children: [
-                                                    new docx.TextRun({
-                                                        text: " ",
-                                                        size: 22
-                                                    })
-                                                ],
-                                                spacing: { after: 120 }
-                                            }),
-                                            new docx.Paragraph({
-                                                children: [
-                                                    new docx.TextRun({
-                                                        text: formData.tindakLanjut,
-                                                        size: 22
-                                                    })
-                                                ]
-                                            })
-                                        ],
+                                        children: createDataParagraphs(),
                                         verticalAlign: docx.VerticalAlign.TOP
                                     }),
                                     // FOTO GEOTAG cell
                                     new docx.TableCell({
-                                        children: await createPhotoCell(),
+                                        children: createPhotoCell(),
                                         verticalAlign: docx.VerticalAlign.CENTER
                                     })
                                 ]
@@ -555,12 +599,7 @@ document.getElementById('laporanForm').addEventListener('submit', async function
                                     new docx.TableCell({
                                         children: [
                                             new docx.Paragraph({
-                                                children: [
-                                                    new docx.TextRun({
-                                                        text: " ",
-                                                        size: 22
-                                                    })
-                                                ]
+                                                children: [new docx.TextRun({ text: " ", size: 22 })]
                                             })
                                         ],
                                         columnSpan: 3
@@ -570,7 +609,43 @@ document.getElementById('laporanForm').addEventListener('submit', async function
                                             new docx.Paragraph({
                                                 children: [
                                                     new docx.TextRun({
-                                                        text: `Kader yang\nmelakukan\nkunjungan\nrumah :\n${formData.kader}`,
+                                                        text: "Kader yang",
+                                                        size: 22
+                                                    })
+                                                ],
+                                                alignment: docx.AlignmentType.LEFT
+                                            }),
+                                            new docx.Paragraph({
+                                                children: [
+                                                    new docx.TextRun({
+                                                        text: "melakukan",
+                                                        size: 22
+                                                    })
+                                                ],
+                                                alignment: docx.AlignmentType.LEFT
+                                            }),
+                                            new docx.Paragraph({
+                                                children: [
+                                                    new docx.TextRun({
+                                                        text: "kunjungan",
+                                                        size: 22
+                                                    })
+                                                ],
+                                                alignment: docx.AlignmentType.LEFT
+                                            }),
+                                            new docx.Paragraph({
+                                                children: [
+                                                    new docx.TextRun({
+                                                        text: "rumah :",
+                                                        size: 22
+                                                    })
+                                                ],
+                                                alignment: docx.AlignmentType.LEFT
+                                            }),
+                                            new docx.Paragraph({
+                                                children: [
+                                                    new docx.TextRun({
+                                                        text: formData.kader,
                                                         size: 22
                                                     })
                                                 ],
@@ -586,14 +661,6 @@ document.getElementById('laporanForm').addEventListener('submit', async function
                 ]
             }]
         });
-
-        // Step 5: Proses gambar untuk dokumen
-        if (compressedImageBlob) {
-            await simulateProgress(80);
-        } else {
-            currentProgress = 80;
-            updateProgress(80, "Menyelesaikan dokumen...");
-        }
 
         // Step 6: Siapkan download
         await simulateProgress(95);
@@ -622,63 +689,15 @@ document.getElementById('laporanForm').addEventListener('submit', async function
     } catch (error) {
         console.error('Error generating document:', error);
         progressContainer.style.display = 'none';
-        alert('Terjadi kesalahan saat membuat dokumen. Silakan coba lagi.');
+        alert('Terjadi kesalahan saat membuat dokumen: ' + error.message);
     } finally {
         generateBtn.disabled = false;
     }
 });
 
-// Fungsi untuk membuat cell foto
-async function createPhotoCell() {
-    if (!compressedImageBlob) {
-        return [
-            new docx.Paragraph({
-                children: [
-                    new docx.TextRun({
-                        text: " ",
-                        size: 200
-                    })
-                ],
-                spacing: { after: 240 }
-            })
-        ];
-    }
-
-    try {
-        // Convert blob to array buffer
-        const arrayBuffer = await compressedImageBlob.arrayBuffer();
-
-        return [
-            new docx.Paragraph({
-                children: [
-                    new docx.ImageRun({
-                        data: arrayBuffer,
-                        transformation: {
-                            width: 167, // 2.31875 inches * 72 points/inch ≈ 167 points
-                            height: 248, // 3.45 inches * 72 points/inch ≈ 248 points
-                        }
-                    })
-                ],
-                alignment: docx.AlignmentType.CENTER
-            })
-        ];
-    } catch (error) {
-        console.error('Error processing image for document:', error);
-        return [
-            new docx.Paragraph({
-                children: [
-                    new docx.TextRun({
-                        text: "(Foto tidak dapat diproses)",
-                        size: 22
-                    })
-                ],
-                alignment: docx.AlignmentType.CENTER
-            })
-        ];
-    }
-}
-
 // Set tanggal hari ini sebagai default
 document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('tanggal').valueAsDate = new Date();
+    const today = new Date();
+    const formattedToday = today.toISOString().split('T')[0];
+    document.getElementById('tanggal').value = formattedToday;
 });
