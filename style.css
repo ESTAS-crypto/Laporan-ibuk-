@@ -4,6 +4,8 @@ body {
     margin: 0 auto;
     padding: 20px;
     background-color: #f5f5f5;
+    padding-bottom: 80px;
+    /* Space untuk footer */
 }
 
 .container {
@@ -107,6 +109,7 @@ button:disabled {
     text-align: center;
     margin-top: 10px;
     color: #7f8c8d;
+    font-weight: bold;
 }
 
 .success {
@@ -120,6 +123,53 @@ button:disabled {
     font-size: 12px;
     color: #7f8c8d;
     margin-top: 5px;
+}
+
+.error {
+    text-align: center;
+    margin-top: 10px;
+    color: #e74c3c;
+    font-weight: bold;
+    padding: 10px;
+    background-color: #ffeaea;
+    border-radius: 5px;
+    border: 1px solid #e74c3c;
+}
+
+
+/* Styles untuk multiple laporan */
+
+.laporan-section {
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 25px;
+    background-color: #f8f9fa;
+    position: relative;
+}
+
+.laporan-section:first-child {
+    border-color: #3498db;
+    background-color: #f0f8ff;
+}
+
+.laporan-title {
+    color: #2c3e50;
+    margin: 0 0 20px 0;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #3498db;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.laporan-section:nth-child(even) .laporan-title {
+    color: #27ae60;
+    border-bottom-color: #27ae60;
+}
+
+.laporan-section:nth-child(odd):not(:first-child) .laporan-title {
+    color: #e74c3c;
+    border-bottom-color: #e74c3c;
 }
 
 
@@ -153,7 +203,7 @@ button:disabled {
 }
 
 .progress-fill::after {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: 0;
@@ -188,6 +238,88 @@ button:disabled {
 }
 
 
+/* WhatsApp Floating Button Styles */
+
+.whatsapp-float {
+    position: fixed;
+    right: 20px;
+    bottom: 100px;
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #25d366, #128c7e);
+    border-radius: 50%;
+    box-shadow: 0 4px 20px rgba(37, 211, 102, 0.4);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    transition: all 0.3s ease;
+    animation: pulse 2s infinite;
+    top: 90%;
+}
+
+.whatsapp-float:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 25px rgba(37, 211, 102, 0.6);
+    animation: none;
+}
+
+.whatsapp-float:active {
+    transform: scale(0.95);
+}
+
+.whatsapp-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.whatsapp-tooltip {
+    position: absolute;
+    right: 70px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #333;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.whatsapp-tooltip::after {
+    content: "";
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    border: 6px solid transparent;
+    border-left-color: #333;
+}
+
+.whatsapp-float:hover .whatsapp-tooltip {
+    opacity: 1;
+    visibility: visible;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 4px 20px rgba(37, 211, 102, 0.4), 0 0 0 0 rgba(37, 211, 102, 0.7);
+    }
+    50% {
+        box-shadow: 0 4px 20px rgba(37, 211, 102, 0.4), 0 0 0 10px rgba(37, 211, 102, 0);
+    }
+    100% {
+        box-shadow: 0 4px 20px rgba(37, 211, 102, 0.4), 0 0 0 0 rgba(37, 211, 102, 0);
+    }
+}
+
+
 /* Animation for smooth transitions */
 
 .fade-in {
@@ -202,5 +334,33 @@ button:disabled {
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+
+/* Responsive untuk layar kecil */
+
+@media (max-width: 768px) {
+    .laporan-section {
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    .laporan-title {
+        font-size: 16px;
+    }
+    .whatsapp-float {
+        right: 15px;
+        bottom: 80px;
+        width: 50px;
+        height: 50px;
+    }
+    .whatsapp-icon svg {
+        width: 22px;
+        height: 22px;
+    }
+    .whatsapp-tooltip {
+        right: 60px;
+        font-size: 11px;
+        padding: 6px 10px;
     }
 }
