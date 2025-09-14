@@ -1,447 +1,442 @@
 <!DOCTYPE html>
 <html lang="id">
-  <head>
+
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Footer</title>
     <style>
-      :root {
-        --modal-fade: 800ms;
-        /* overlay fade */
-        --modal-pop: 1000ms;
-        /* pop-in card duration */
-        --img-hover: 500ms;
-        /* hover/transisi gambar */
-      }
-
-      .footer {
-        background: linear-gradient(135deg, #2c3e50, #34495e);
-        color: white;
-        text-align: center;
-        padding: 25px 20px;
-        margin-top: 40px;
-        border-radius: 10px 10px 0 0;
-        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-        position: relative;
-        overflow: hidden;
-      }
-
-      .footer::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 3px;
-        background: linear-gradient(
-          90deg,
-          #3498db,
-          #2980b9,
-          #27ae60,
-          #f39c12,
-          #e74c3c
-        );
-      }
-
-      .footer-content {
-        max-width: 800px;
-        margin: 0 auto;
-      }
-
-      .footer h3 {
-        margin: 0 0 15px 0;
-        font-size: 18px;
-        color: #ecf0f1;
-        font-weight: bold;
-      }
-
-      .footer p {
-        margin: 8px 0;
-        font-size: 14px;
-        color: #bdc3c7;
-        line-height: 1.5;
-      }
-
-      .footer-divider {
-        width: 60px;
-        height: 2px;
-        background: #3498db;
-        margin: 15px auto;
-        border-radius: 2px;
-      }
-
-      .footer-links {
-        display: flex;
-        justify-content: center;
-        gap: 20px;
-        margin: 15px 0;
-        flex-wrap: wrap;
-      }
-
-      .footer-link {
-        color: #3498db;
-        text-decoration: none;
-        font-size: 13px;
-        transition: color 0.3s ease;
-        padding: 5px 10px;
-        border-radius: 15px;
-        background: rgba(52, 152, 219, 0.1);
-      }
-
-      .footer-link:hover {
-        color: #2980b9;
-        background: rgba(52, 152, 219, 0.2);
-      }
-
-      .footer-copyright {
-        margin-top: 20px;
-        padding-top: 15px;
-        border-top: 1px solid #34495e;
-        font-size: 12px;
-        color: #7f8c8d;
-      }
-
-      .footer-version {
-        display: inline-block;
-        background: rgba(52, 152, 219, 0.2);
-        color: #3498db;
-        padding: 3px 8px;
-        border-radius: 12px;
-        font-size: 11px;
-        margin-left: 10px;
-      }
-      /* overlay dasar */
-
-      #qrisModal {
-        display: none;
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.6);
-        justify-content: center;
-        align-items: center;
-        z-index: 9999;
-        opacity: 0;
-        transition: opacity var(--modal-fade) ease;
-        pointer-events: none;
-      }
-      /* tampil */
-
-      #qrisModal.open {
-        display: flex;
-        opacity: 1;
-        pointer-events: auto;
-      }
-      /* saat sedang menutup (masih punya 'open' + 'closing') */
-
-      #qrisModal.open.closing {
-        opacity: 0;
-        pointer-events: none;
-      }
-      /* card masuk */
-
-      #qrisModal .qris-card {
-        background: white;
-        padding: 20px;
-        border-radius: 12px;
-        text-align: center;
-        max-width: 320px;
-        width: 92%;
-        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
-        transform: translateY(20px) scale(0.96);
-        opacity: 0;
-        /* animasi masuk hanya saat buka */
-      }
-      /* animasi pop-in (masuk) */
-
-      @keyframes qrisPop {
-        0% {
-          transform: translateY(20px) scale(0.96);
-          opacity: 0;
+         :root {
+            --modal-fade: 800ms;
+            /* overlay fade */
+            --modal-pop: 1000ms;
+            /* pop-in card duration */
+            --img-hover: 500ms;
+            /* hover/transisi gambar */
         }
-        60% {
-          transform: translateY(-6px) scale(1.02);
-          opacity: 1;
-        }
-        100% {
-          transform: translateY(0) scale(1);
-          opacity: 1;
-        }
-      }
-      /* animasi close (reverse) */
-
-      @keyframes qrisClose {
-        0% {
-          transform: translateY(0) scale(1);
-          opacity: 1;
-        }
-        100% {
-          transform: translateY(20px) scale(0.96);
-          opacity: 0;
-        }
-      }
-      /* jalankan animasi masuk saat buka */
-
-      #qrisModal.open .qris-card {
-        animation: qrisPop var(--modal-pop) cubic-bezier(0.2, 0.9, 0.3, 1)
-          forwards;
-      }
-      /* jalankan animasi close saat menutup */
-
-      #qrisModal.open.closing .qris-card {
-        animation: qrisClose var(--modal-pop) cubic-bezier(0.2, 0.9, 0.3, 1)
-          forwards;
-      }
-      /* image & tombol (sama seperti sebelumnya) */
-
-      .qris-img {
-        width: 250px;
-        max-width: 100%;
-        border-radius: 10px;
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
-        transition: transform var(--img-hover) ease;
-        display: inline-block;
-        margin: 6px 0;
-      }
-
-      .qris-img:hover {
-        transform: translateY(-6px) scale(1.02);
-      }
-
-      .qris-close {
-        padding: 8px 16px;
-        border: none;
-        border-radius: 8px;
-        background: #3498db;
-        color: #fff;
-        cursor: pointer;
-        font-weight: 600;
-        margin-top: 10px;
-      }
-
-      .qris-close-x {
-        position: absolute;
-        right: 12px;
-        top: 12px;
-        background: transparent;
-        border: none;
-        font-size: 18px;
-        cursor: pointer;
-      }
-
-      @keyframes heartbeat {
-        0%,
-        50%,
-        100% {
-          transform: scale(1);
-        }
-        25%,
-        75% {
-          transform: scale(1.1);
-        }
-      }
-
-      @media (max-width: 768px) {
+        
         .footer {
-          padding: 20px 15px;
-          margin-top: 30px;
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            text-align: center;
+            padding: 25px 20px;
+            margin-top: 40px;
+            border-radius: 10px 10px 0 0;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
         }
+        
+        .footer::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient( 90deg, #3498db, #2980b9, #27ae60, #f39c12, #e74c3c);
+        }
+        
+        .footer-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
         .footer h3 {
-          font-size: 16px;
+            margin: 0 0 15px 0;
+            font-size: 18px;
+            color: #ecf0f1;
+            font-weight: bold;
         }
+        
         .footer p {
-          font-size: 13px;
+            margin: 8px 0;
+            font-size: 14px;
+            color: #bdc3c7;
+            line-height: 1.5;
         }
+        
+        .footer-divider {
+            width: 60px;
+            height: 2px;
+            background: #3498db;
+            margin: 15px auto;
+            border-radius: 2px;
+        }
+        
         .footer-links {
-          gap: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 15px 0;
+            flex-wrap: wrap;
         }
+        
         .footer-link {
-          font-size: 12px;
-          padding: 4px 8px;
+            color: #3498db;
+            text-decoration: none;
+            font-size: 13px;
+            transition: color 0.3s ease;
+            padding: 5px 10px;
+            border-radius: 15px;
+            background: rgba(52, 152, 219, 0.1);
         }
-      }
+        
+        .footer-link:hover {
+            color: #2980b9;
+            background: rgba(52, 152, 219, 0.2);
+        }
+        
+        .footer-copyright {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #34495e;
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+        
+        .footer-version {
+            display: inline-block;
+            background: rgba(52, 152, 219, 0.2);
+            color: #3498db;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            margin-left: 10px;
+        }
+        /* overlay dasar */
+        
+        #qrisModal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity var(--modal-fade) ease;
+            pointer-events: none;
+        }
+        /* tampil */
+        
+        #qrisModal.open {
+            display: flex;
+            opacity: 1;
+            pointer-events: auto;
+        }
+        /* saat sedang menutup (masih punya 'open' + 'closing') */
+        
+        #qrisModal.open.closing {
+            opacity: 0;
+            pointer-events: none;
+        }
+        /* card masuk */
+        
+        #qrisModal .qris-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            max-width: 320px;
+            width: 92%;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+            transform: translateY(20px) scale(0.96);
+            opacity: 0;
+            /* animasi masuk hanya saat buka */
+        }
+        /* animasi pop-in (masuk) */
+        
+        @keyframes qrisPop {
+            0% {
+                transform: translateY(20px) scale(0.96);
+                opacity: 0;
+            }
+            60% {
+                transform: translateY(-6px) scale(1.02);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+        }
+        /* animasi close (reverse) */
+        
+        @keyframes qrisClose {
+            0% {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(20px) scale(0.96);
+                opacity: 0;
+            }
+        }
+        /* jalankan animasi masuk saat buka */
+        
+        #qrisModal.open .qris-card {
+            animation: qrisPop var(--modal-pop) cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+        }
+        /* jalankan animasi close saat menutup */
+        
+        #qrisModal.open.closing .qris-card {
+            animation: qrisClose var(--modal-pop) cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+        }
+        /* image & tombol (sama seperti sebelumnya) */
+        
+        .qris-img {
+            width: 250px;
+            max-width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+            transition: transform var(--img-hover) ease;
+            display: inline-block;
+            margin: 6px 0;
+        }
+        
+        .qris-img:hover {
+            transform: translateY(-6px) scale(1.02);
+        }
+        
+        .qris-close {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            background: #3498db;
+            color: #fff;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+        
+        .qris-close-x {
+            position: absolute;
+            right: 12px;
+            top: 12px;
+            background: transparent;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: #333;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        
+        .qris-close-x:hover {
+            background: #e74c3c;
+            color: white;
+            transform: scale(1.1);
+        }
+        
+        @keyframes heartbeat {
+            0%,
+            50%,
+            100% {
+                transform: scale(1);
+            }
+            25%,
+            75% {
+                transform: scale(1.1);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .footer {
+                padding: 20px 15px;
+                margin-top: 30px;
+            }
+            .footer h3 {
+                font-size: 16px;
+            }
+            .footer p {
+                font-size: 13px;
+            }
+            .footer-links {
+                gap: 15px;
+            }
+            .footer-link {
+                font-size: 12px;
+                padding: 4px 8px;
+            }
+        }
     </style>
-  </head>
+</head>
 
-  <body>
+<body>
     <footer class="footer">
-      <div class="footer-content">
-        <h3>Laporan Kunjungan Rumah</h3>
-        <div class="footer-divider"></div>
-        <p>Puskesmas Balas Klumprik</p>
-        <p>
-          Aplikasi untuk membantu pembuatan laporan kunjungan rumah yang efisien
-          dan terstandar
-        </p>
+        <div class="footer-content">
+            <h3>Laporan Kunjungan Rumah</h3>
+            <div class="footer-divider"></div>
+            <p>Puskesmas Balas Klumprik</p>
+            <p>
+                Aplikasi untuk membantu pembuatan laporan kunjungan rumah yang efisien dan terstandar
+            </p>
 
-        <div class="footer-links">
-          <a href="#" class="footer-link" id="supportLink">Support</a>
-          <a href="#" class="footer-link" id="feedbackLink">Feedback</a>
-          <a href="#" class="footer-link" id="bugReportLink">Laporkan Bug</a>
-          <a href="#" class="footer-link" id="supportDeveloperLink"
-            >Support Developer</a
-          >
-        </div>
-
-        <div class="footer-copyright">
-          <p>
-            Dibuat dengan <span class="footer-heart">evan atharasya</span> untuk
-            ibu" Balas Klumprik
-            <span class="footer-version">v1.0</span>
-          </p>
-          <p>
-            &copy; 2025 - Generator Laporan Kunjungan Rumah. Semua hak
-            dilindungi.
-          </p>
-          <!-- Tambahkan di dalam <body>, sebelum </body> -->
-          <div id="qrisModal" aria-hidden="true">
-            <div
-              class="qris-card"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="qrisTitle"
-            >
-              <button
-                class="qris-close-x"
-                aria-label="Tutup modal"
-                onclick="closeQris()"
-              >
-                ✕
-              </button>
-              <h3 id="qrisTitle" style="color: black; margin: 0 0 6px">
-                Support Developer
-              </h3>
-              <p style="color: black; margin: 0 0 10px">
-                Scan QRIS berikut untuk support:
-              </p>
-
-              <!-- ganti nama file sesuai qris.jpg / qris.png -->
-              <img src="qris.jpg" alt="QRIS Support" class="qris-img" />
-
-              <br />
-              <button class="qris-close" onclick="closeQris()">Tutup</button>
+            <div class="footer-links">
+                <a href="#" class="footer-link" id="supportLink">Support</a>
+                <a href="#" class="footer-link" id="feedbackLink">Feedback</a>
+                <a href="#" class="footer-link" id="bugReportLink">Laporkan Bug</a>
+                <a href="#" class="footer-link" id="supportDeveloperLink">Support Developer</a>
             </div>
-          </div>
+
+            <div class="footer-copyright">
+                <p>
+                    Dibuat dengan ❤️ oleh <span style="font-weight: bold;">evan atharasya</span> untuk ibu-ibu Balas Klumprik
+                    <span class="footer-version">v1.0</span>
+                </p>
+                <p>
+                    &copy; 2025 - Generator Laporan Kunjungan Rumah. Semua hak dilindungi.
+                </p>
+            </div>
         </div>
-      </div>
     </footer>
 
+    <!-- QRIS Modal -->
+    <div id="qrisModal" aria-hidden="true">
+        <div class="qris-card" role="dialog" aria-modal="true" aria-labelledby="qrisTitle">
+            <button class="qris-close-x" aria-label="Tutup modal" onclick="closeQris()">
+                ×
+            </button>
+            <h3 id="qrisTitle" style="color: black; margin: 0 0 6px">
+                Support Developer
+            </h3>
+            <p style="color: black; margin: 0 0 10px">
+                Scan QRIS berikut untuk support:
+            </p>
+
+            <!-- ganti nama file sesuai qris.jpg / qris.png -->
+            <img src="qris.jpg" alt="QRIS Support" class="qris-img" />
+
+            <br />
+            <button class="qris-close" onclick="closeQris()">Tutup</button>
+        </div>
+    </div>
+
     <script>
-      // Event listeners untuk footer links
-      document
-        .getElementById("supportLink")
-        .addEventListener("click", function (e) {
-          e.preventDefault();
-          openWhatsApp(
-            "Halo, saya butuh bantuan dengan aplikasi Generator Laporan Kunjungan Rumah."
-          );
-        });
+        // Event listeners untuk footer links
+        document
+            .getElementById("supportLink")
+            .addEventListener("click", function(e) {
+                e.preventDefault();
+                openWhatsApp(
+                    "Halo, saya butuh bantuan dengan aplikasi Generator Laporan Kunjungan Rumah."
+                );
+            });
 
-      document
-        .getElementById("feedbackLink")
-        .addEventListener("click", function (e) {
-          e.preventDefault();
-          openWhatsApp(
-            "Halo, saya ingin memberikan feedback untuk aplikasi Generator Laporan Kunjungan Rumah."
-          );
-        });
+        document
+            .getElementById("feedbackLink")
+            .addEventListener("click", function(e) {
+                e.preventDefault();
+                openWhatsApp(
+                    "Halo, saya ingin memberikan feedback untuk aplikasi Generator Laporan Kunjungan Rumah."
+                );
+            });
 
-      document
-        .getElementById("bugReportLink")
-        .addEventListener("click", function (e) {
-          e.preventDefault();
-          openWhatsApp(
-            "Halo, saya menemukan bug di aplikasi Generator Laporan Kunjungan Rumah. Detailnya: "
-          );
-        });
+        document
+            .getElementById("bugReportLink")
+            .addEventListener("click", function(e) {
+                e.preventDefault();
+                openWhatsApp(
+                    "Halo, saya menemukan bug di aplikasi Generator Laporan Kunjungan Rumah. Detailnya: "
+                );
+            });
 
-      function openWhatsApp(message) {
-        // Ganti nomor WhatsApp dengan nomor yang sesuai
-        const phoneNumber = "62895385890629"; // Ubah dengan nomor WA Anda
-        const encodedMessage = encodeURIComponent(message);
-        const whatsappURL = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
-        window.open(whatsappURL, "_blank");
-      }
-      const qrisModal = document.getElementById("qrisModal");
-      const supportDevLink = document.getElementById("supportDeveloperLink");
-
-      function openQris() {
-        // hapus kelas closing jika masih ada (safety)
-        qrisModal.classList.remove("closing");
-        // tunjukkan modal
-        qrisModal.classList.add("open");
-        qrisModal.setAttribute("aria-hidden", "false");
-        document.addEventListener("keydown", escHandler);
-        // fokus ke tombol tutup
-        const closeBtn = qrisModal.querySelector(".qris-close");
-        if (closeBtn) closeBtn.focus();
-      }
-
-      function closeQris() {
-        if (!qrisModal.classList.contains("open")) return; // kalau sudah tutup, hentikan
-        // tambahkan kelas 'closing' (tetap pertahankan 'open' hingga animasi selesai)
-        qrisModal.classList.add("closing");
-        qrisModal.setAttribute("aria-hidden", "true");
-        document.removeEventListener("keydown", escHandler);
-
-        const card = qrisModal.querySelector(".qris-card");
-
-        // handler untuk membersihkan setelah animasi selesai
-        function finishClose() {
-          // hapus kelas open + closing sehingga CSS display: none berlaku
-          qrisModal.classList.remove("open", "closing");
-          // pastikan fokus kembali ke link
-          if (supportDevLink) supportDevLink.focus();
-          // lepas listener ini
-          card.removeEventListener("animationend", finishClose);
+        function openWhatsApp(message) {
+            // Ganti nomor WhatsApp dengan nomor yang sesuai
+            const phoneNumber = "62895385890629"; // Ubah dengan nomor WA Anda
+            const encodedMessage = encodeURIComponent(message);
+            const whatsappURL = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+            window.open(whatsappURL, "_blank");
         }
 
-        // kalau browser mendukung animationend, tunggu animationend
-        card.addEventListener("animationend", finishClose);
+        const qrisModal = document.getElementById("qrisModal");
+        const supportDevLink = document.getElementById("supportDeveloperLink");
 
-        // fallback safety: jika animationend gak kebaca (jarang), bersihkan setelah --modal-pop
-        const modalDuration =
-          parseFloat(
-            getComputedStyle(document.documentElement).getPropertyValue(
-              "--modal-pop"
-            )
-          ) || 0.9;
-        // modalDuration bisa dalam ms atau s; jika ms misal '900ms', convert; kalau s misal '0.9s', convert
-        let ms = 900;
-        const raw = getComputedStyle(document.documentElement)
-          .getPropertyValue("--modal-pop")
-          .trim();
-        if (raw.endsWith("ms")) ms = parseFloat(raw);
-        else if (raw.endsWith("s")) ms = parseFloat(raw) * 1000;
+        function openQris() {
+            // hapus kelas closing jika masih ada (safety)
+            qrisModal.classList.remove("closing");
+            // tunjukkan modal
+            qrisModal.classList.add("open");
+            qrisModal.setAttribute("aria-hidden", "false");
+            document.addEventListener("keydown", escHandler);
+            // fokus ke tombol tutup
+            const closeBtn = qrisModal.querySelector(".qris-close");
+            if (closeBtn) closeBtn.focus();
+        }
 
-        setTimeout(() => {
-          if (
-            qrisModal.classList.contains("open") &&
-            qrisModal.classList.contains("closing")
-          ) {
-            // force cleanup jika animationend tidak terpanggil
-            qrisModal.classList.remove("open", "closing");
-            if (supportDevLink) supportDevLink.focus();
-          }
-        }, ms + 80); // +80ms buffer
-      }
+        function closeQris() {
+            if (!qrisModal.classList.contains("open")) return; // kalau sudah tutup, hentikan
+            // tambahkan kelas 'closing' (tetap pertahankan 'open' hingga animasi selesai)
+            qrisModal.classList.add("closing");
+            qrisModal.setAttribute("aria-hidden", "true");
+            document.removeEventListener("keydown", escHandler);
 
-      // ESC
-      function escHandler(e) {
-        if (e.key === "Escape" || e.key === "Esc") closeQris();
-      }
+            const card = qrisModal.querySelector(".qris-card");
 
-      // klik overlay untuk close (jangan close jika klik di dalam card)
-      qrisModal.addEventListener("click", function (ev) {
-        if (ev.target === qrisModal) closeQris();
-      });
+            // handler untuk membersihkan setelah animasi selesai
+            function finishClose() {
+                // hapus kelas open + closing sehingga CSS display: none berlaku
+                qrisModal.classList.remove("open", "closing");
+                // pastikan fokus kembali ke link
+                if (supportDevLink) supportDevLink.focus();
+                // lepas listener ini
+                card.removeEventListener("animationend", finishClose);
+            }
 
-      // Kaitkan dengan link support developer
-      if (supportDevLink) {
-        supportDevLink.addEventListener("click", function (e) {
-          e.preventDefault();
-          openQris();
+            // kalau browser mendukung animationend, tunggu animationend
+            card.addEventListener("animationend", finishClose);
+
+            // fallback safety: jika animationend gak kebaca (jarang), bersihkan setelah --modal-pop
+            const modalDuration =
+                parseFloat(
+                    getComputedStyle(document.documentElement).getPropertyValue(
+                        "--modal-pop"
+                    )
+                ) || 0.9;
+            // modalDuration bisa dalam ms atau s; jika ms misal '900ms', convert; kalau s misal '0.9s', convert
+            let ms = 900;
+            const raw = getComputedStyle(document.documentElement)
+                .getPropertyValue("--modal-pop")
+                .trim();
+            if (raw.endsWith("ms")) ms = parseFloat(raw);
+            else if (raw.endsWith("s")) ms = parseFloat(raw) * 1000;
+
+            setTimeout(() => {
+                if (
+                    qrisModal.classList.contains("open") &&
+                    qrisModal.classList.contains("closing")
+                ) {
+                    // force cleanup jika animationend tidak terpanggil
+                    qrisModal.classList.remove("open", "closing");
+                    if (supportDevLink) supportDevLink.focus();
+                }
+            }, ms + 80); // +80ms buffer
+        }
+
+        // ESC
+        function escHandler(e) {
+            if (e.key === "Escape" || e.key === "Esc") closeQris();
+        }
+
+        // klik overlay untuk close (jangan close jika klik di dalam card)
+        qrisModal.addEventListener("click", function(ev) {
+            if (ev.target === qrisModal) closeQris();
         });
-      }
+
+        // Kaitkan dengan link support developer
+        if (supportDevLink) {
+            supportDevLink.addEventListener("click", function(e) {
+                e.preventDefault();
+                openQris();
+            });
+        }
     </script>
-  </body>
+</body>
+
 </html>
