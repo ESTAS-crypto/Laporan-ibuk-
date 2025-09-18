@@ -173,105 +173,115 @@ function compressImage(file, maxWidth = 1200, maxSize = 300000) {
 function toggleCategoryFields(laporanIndex, kategori) {
     const balitaFields = document.getElementById(`balitaFields_${laporanIndex}`);
     const dewasaFields = document.getElementById(`dewasaFields_${laporanIndex}`);
-    const lilaInput = document.getElementById(`lila_${laporanIndex}`);
-    const likaInput = document.getElementById(`lika_${laporanIndex}`);
-    const lingkarPerutBalita = document.getElementById(`lingkarPerut_${laporanIndex}`);
 
-    // Fields untuk dewasa
-    const pilihanPengukuran = document.getElementById(`pilihanPengukuran_${laporanIndex}`);
-    const lilaDInput = document.getElementById(`lilaD_${laporanIndex}`);
-    const lingkarPinggang = document.getElementById(`lingkarPinggang_${laporanIndex}`);
-    const lilaOption = document.getElementById(`lilaOption_${laporanIndex}`);
-    const pinggangOption = document.getElementById(`pinggangOption_${laporanIndex}`);
+    // Reset semua checkbox dan field input
+    resetAllCheckboxes(laporanIndex);
 
     if (kategori === "balita") {
         // Show balita fields, hide dewasa fields
         balitaFields.style.display = "block";
         dewasaFields.style.display = "none";
         balitaFields.style.animation = "fadeIn 0.5s ease-in";
-
-        // Set required for balita fields
-        lilaInput.required = true;
-        likaInput.required = true;
-        lingkarPerutBalita.required = true;
-
-        // Reset dewasa fields
-        pilihanPengukuran.required = false;
-        lilaDInput.required = false;
-        lingkarPinggang.required = false;
-
-        // Clear dewasa field values
-        pilihanPengukuran.value = "";
-        lilaDInput.value = "";
-        lingkarPinggang.value = "";
-        lilaOption.style.display = "none";
-        pinggangOption.style.display = "none";
     } else if (kategori === "dewasa") {
         // Show dewasa fields, hide balita fields
         dewasaFields.style.display = "block";
         balitaFields.style.display = "none";
         dewasaFields.style.animation = "fadeIn 0.5s ease-in";
-
-        // Set required for dewasa fields
-        pilihanPengukuran.required = true;
-
-        // Reset balita fields
-        lilaInput.required = false;
-        likaInput.required = false;
-        lingkarPerutBalita.required = false;
-
-        // Clear balita field values
-        lilaInput.value = "";
-        likaInput.value = "";
-        lingkarPerutBalita.value = "";
     } else {
         // Hide both fields if no category selected
         balitaFields.style.display = "none";
         dewasaFields.style.display = "none";
+    }
+}
 
-        // Set all as not required
-        lilaInput.required = false;
-        likaInput.required = false;
-        lingkarPerutBalita.required = false;
-        pilihanPengukuran.required = false;
-        lilaDInput.required = false;
-        lingkarPinggang.required = false;
+// Fungsi untuk reset semua checkbox dan input fields
+function resetAllCheckboxes(laporanIndex) {
+    // Reset balita checkboxes dan fields
+    const balitaCheckboxes = document.querySelectorAll(`input[name="pengukuranBalita_${laporanIndex}"]`);
+    balitaCheckboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
 
-        // Clear all values
-        lilaInput.value = "";
-        likaInput.value = "";
-        lingkarPerutBalita.value = "";
-        pilihanPengukuran.value = "";
-        lilaDInput.value = "";
-        lingkarPinggang.value = "";
-        lilaOption.style.display = "none";
-        pinggangOption.style.display = "none";
+    // Reset dewasa checkboxes dan fields
+    const dewasaCheckboxes = document.querySelectorAll(`input[name="pengukuranDewasa_${laporanIndex}"]`);
+    dewasaCheckboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+
+    // Reset semua input fields
+    const inputFields = [
+        'lila_', 'lika_', 'lingkarPerut_', 'lilaD_', 'lingkarPinggang_'
+    ];
+
+    inputFields.forEach(fieldName => {
+        const field = document.getElementById(`${fieldName}${laporanIndex}`);
+        if (field) {
+            field.value = "";
+        }
+    });
+
+    // Hide semua pengukuran options
+    const allOptions = [
+        'lilaBalitaOption_', 'likaBalitaOption_', 'lingkarPerutBalitaOption_',
+        'lilaDewasaOption_', 'lingkarPinggangDewasaOption_'
+    ];
+
+    allOptions.forEach(optionName => {
+        const option = document.getElementById(`${optionName}${laporanIndex}`);
+        if (option) {
+            option.style.display = "none";
+        }
+    });
+}
+
+// Fungsi untuk toggle opsi pengukuran balita
+function toggleBalitaPengukuranOption(laporanIndex, checkboxValue, isChecked) {
+    const optionMapping = {
+        'lila': 'lilaBalitaOption_',
+        'lika': 'likaBalitaOption_',
+        'lingkarPerut': 'lingkarPerutBalitaOption_'
+    };
+
+    const optionId = optionMapping[checkboxValue] + laporanIndex;
+    const option = document.getElementById(optionId);
+
+    if (option) {
+        if (isChecked) {
+            option.style.display = "block";
+            option.style.animation = "fadeIn 0.3s ease-in";
+        } else {
+            option.style.display = "none";
+            // Clear input value when unchecked
+            const input = option.querySelector('input');
+            if (input) {
+                input.value = "";
+            }
+        }
     }
 }
 
 // Fungsi untuk toggle opsi pengukuran dewasa
-function togglePengukuranOption(laporanIndex, pilihan) {
-    const lilaOption = document.getElementById(`lilaOption_${laporanIndex}`);
-    const pinggangOption = document.getElementById(`pinggangOption_${laporanIndex}`);
-    const lilaDInput = document.getElementById(`lilaD_${laporanIndex}`);
-    const lingkarPinggang = document.getElementById(`lingkarPinggang_${laporanIndex}`);
+function toggleDewasaPengukuranOption(laporanIndex, checkboxValue, isChecked) {
+    const optionMapping = {
+        'lila': 'lilaDewasaOption_',
+        'lingkarPinggang': 'lingkarPinggangDewasaOption_'
+    };
 
-    // Reset semua
-    lilaOption.style.display = "none";
-    pinggangOption.style.display = "none";
-    lilaDInput.required = false;
-    lingkarPinggang.required = false;
-    lilaDInput.value = "";
-    lingkarPinggang.value = "";
+    const optionId = optionMapping[checkboxValue] + laporanIndex;
+    const option = document.getElementById(optionId);
 
-    if (pilihan === "lila") {
-        lilaOption.style.display = "block";
-        lilaOption.style.animation = "fadeIn 0.3s ease-in";
-        lilaDInput.required = true;
-    } else if (pilihan === "pinggang") {
-        pinggangOption.style.display = "block";
-        pinggangOption.style.animation = "fadeIn 0.3s ease-in";
-        lingkarPinggang.required = true;
+    if (option) {
+        if (isChecked) {
+            option.style.display = "block";
+            option.style.animation = "fadeIn 0.3s ease-in";
+        } else {
+            option.style.display = "none";
+            // Clear input value when unchecked
+            const input = option.querySelector('input');
+            if (input) {
+                input.value = "";
+            }
+        }
     }
 }
 
@@ -537,48 +547,69 @@ function generateLaporanForms(jumlah) {
 
                 <!-- Field khusus balita (hidden by default) -->
                 <div class="balita-fields" id="balitaFields_${i}" style="display: none;">
-                    <div class="row">
-                        <div class="col">
-                            <div class="form-group">
-                                <label for="lila_${i}">LILA - Lingkar Lengan Atas (cm):</label>
-                                <input type="number" step="0.1" id="lila_${i}" name="lila_${i}" />
+                    <div class="form-group">
+                        <label>Pilih Jenis Pengukuran (bisa pilih lebih dari 1):</label>
+                        <div class="checkbox-group">
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="lilaBalitaCheck_${i}" name="pengukuranBalita_${i}" value="lila" />
+                                <label for="lilaBalitaCheck_${i}">LILA - Lingkar Lengan Atas</label>
                             </div>
-                        </div>
-                        <div class="col">
-                            <div class="form-group">
-                                <label for="lika_${i}">LIKA - Lingkar Kepala (cm):</label>
-                                <input type="number" step="0.1" id="lika_${i}" name="lika_${i}" />
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="likaBalitaCheck_${i}" name="pengukuranBalita_${i}" value="lika" />
+                                <label for="likaBalitaCheck_${i}">LIKA - Lingkar Kepala</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="lingkarPerutBalitaCheck_${i}" name="pengukuranBalita_${i}" value="lingkarPerut" />
+                                <label for="lingkarPerutBalitaCheck_${i}">Lingkar Perut</label>
                             </div>
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label for="lingkarPerut_${i}">Lingkar Perut (cm):</label>
-                        <input type="number" id="lingkarPerut_${i}" name="lingkarPerut_${i}" />
+
+                    <!-- Field input untuk balita -->
+                    <div class="pengukuran-option" id="lilaBalitaOption_${i}" style="display: none">
+                        <div class="form-group">
+                            <label for="lila_${i}">LILA - Lingkar Lengan Atas (cm):</label>
+                            <input type="number" step="0.1" id="lila_${i}" name="lila_${i}" />
+                        </div>
+                    </div>
+                    <div class="pengukuran-option" id="likaBalitaOption_${i}" style="display: none">
+                        <div class="form-group">
+                            <label for="lika_${i}">LIKA - Lingkar Kepala (cm):</label>
+                            <input type="number" step="0.1" id="lika_${i}" name="lika_${i}" />
+                        </div>
+                    </div>
+                    <div class="pengukuran-option" id="lingkarPerutBalitaOption_${i}" style="display: none">
+                        <div class="form-group">
+                            <label for="lingkarPerut_${i}">Lingkar Perut (cm):</label>
+                            <input type="number" id="lingkarPerut_${i}" name="lingkarPerut_${i}" />
+                        </div>
                     </div>
                 </div>
 
                 <!-- Field khusus dewasa (hidden by default) -->
                 <div class="dewasa-fields" id="dewasaFields_${i}" style="display: none;">
-                    <!-- Pilihan pengukuran untuk dewasa -->
                     <div class="form-group">
-                        <label for="pilihanPengukuran_${i}">Pilih Jenis Pengukuran:</label>
-                        <select id="pilihanPengukuran_${i}" name="pilihanPengukuran_${i}">
-                            <option value="">Pilih Pengukuran</option>
-                            <option value="lila">LILA - Lingkar Lengan Atas</option>
-                            <option value="pinggang">Lingkar Pinggang</option>
-                        </select>
+                        <label>Pilih Jenis Pengukuran (bisa pilih lebih dari 1):</label>
+                        <div class="checkbox-group">
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="lilaDewasaCheck_${i}" name="pengukuranDewasa_${i}" value="lila" />
+                                <label for="lilaDewasaCheck_${i}">LILA - Lingkar Lengan Atas</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="lingkarPinggangDewasaCheck_${i}" name="pengukuranDewasa_${i}" value="lingkarPinggang" />
+                                <label for="lingkarPinggangDewasaCheck_${i}">Lingkar Pinggang</label>
+                            </div>
+                        </div>
                     </div>
-                    
-                    <!-- Field LILA untuk dewasa -->
-                    <div class="pengukuran-option" id="lilaOption_${i}" style="display: none;">
+
+                    <!-- Field input untuk dewasa -->
+                    <div class="pengukuran-option" id="lilaDewasaOption_${i}" style="display: none">
                         <div class="form-group">
                             <label for="lilaD_${i}">LILA - Lingkar Lengan Atas (cm):</label>
                             <input type="number" step="0.1" id="lilaD_${i}" name="lilaD_${i}" />
                         </div>
                     </div>
-                    
-                    <!-- Field Lingkar Pinggang untuk dewasa -->
-                    <div class="pengukuran-option" id="pinggangOption_${i}" style="display: none;">
+                    <div class="pengukuran-option" id="lingkarPinggangDewasaOption_${i}" style="display: none">
                         <div class="form-group">
                             <label for="lingkarPinggang_${i}">Lingkar Pinggang (cm):</label>
                             <input type="number" step="0.1" id="lingkarPinggang_${i}" name="lingkarPinggang_${i}" />
@@ -654,13 +685,21 @@ function addEventListeners(laporanIndex) {
         toggleCategoryFields(laporanIndex, this.value);
     });
 
-    // Event listener untuk pilihan pengukuran dewasa
-    const pilihanPengukuran = document.getElementById(`pilihanPengukuran_${laporanIndex}`);
-    if (pilihanPengukuran) {
-        pilihanPengukuran.addEventListener("change", function() {
-            togglePengukuranOption(laporanIndex, this.value);
+    // Event listeners untuk checkbox balita
+    const balitaCheckboxes = document.querySelectorAll(`input[name="pengukuranBalita_${laporanIndex}"]`);
+    balitaCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener("change", function() {
+            toggleBalitaPengukuranOption(laporanIndex, this.value, this.checked);
         });
-    }
+    });
+
+    // Event listeners untuk checkbox dewasa
+    const dewasaCheckboxes = document.querySelectorAll(`input[name="pengukuranDewasa_${laporanIndex}"]`);
+    dewasaCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener("change", function() {
+            toggleDewasaPengukuranOption(laporanIndex, this.value, this.checked);
+        });
+    });
 
     // Setup drag and drop untuk foto
     setupDragAndDrop(laporanIndex);
@@ -710,7 +749,7 @@ function showError(message) {
     }, 5000);
 }
 
-// Fungsi untuk mengambil data semua laporan
+// Fungsi untuk mengambil data semua laporan dengan multiple measurements
 function getAllLaporanData() {
     const jumlahLaporan = parseInt(
         document.getElementById("jumlahLaporan").value
@@ -732,22 +771,37 @@ function getAllLaporanData() {
             tindakLanjut: document.getElementById(`tindakLanjut_${i}`).value,
             kader: document.getElementById(`kader_${i}`).value,
             fotoData: processedImageData[i] || null,
+            measurements: {}
         };
 
-        // Tambahkan data berdasarkan kategori
+        // Ambil data pengukuran berdasarkan kategori
         if (kategori === "balita") {
-            data.lila = document.getElementById(`lila_${i}`).value;
-            data.lika = document.getElementById(`lika_${i}`).value;
-            data.lingkarPerut = document.getElementById(`lingkarPerut_${i}`).value;
+            const balitaCheckboxes = document.querySelectorAll(`input[name="pengukuranBalita_${i}"]:checked`);
+            balitaCheckboxes.forEach(checkbox => {
+                const value = checkbox.value;
+                if (value === "lila") {
+                    const lilaValue = document.getElementById(`lila_${i}`).value;
+                    if (lilaValue) data.measurements.lila = lilaValue;
+                } else if (value === "lika") {
+                    const likaValue = document.getElementById(`lika_${i}`).value;
+                    if (likaValue) data.measurements.lika = likaValue;
+                } else if (value === "lingkarPerut") {
+                    const lingkarPerutValue = document.getElementById(`lingkarPerut_${i}`).value;
+                    if (lingkarPerutValue) data.measurements.lingkarPerut = lingkarPerutValue;
+                }
+            });
         } else if (kategori === "dewasa") {
-            const pilihanPengukuran = document.getElementById(`pilihanPengukuran_${i}`).value;
-            if (pilihanPengukuran === "lila") {
-                data.lilaD = document.getElementById(`lilaD_${i}`).value;
-                data.pilihanPengukuran = "lila";
-            } else if (pilihanPengukuran === "pinggang") {
-                data.lingkarPinggang = document.getElementById(`lingkarPinggang_${i}`).value;
-                data.pilihanPengukuran = "pinggang";
-            }
+            const dewasaCheckboxes = document.querySelectorAll(`input[name="pengukuranDewasa_${i}"]:checked`);
+            dewasaCheckboxes.forEach(checkbox => {
+                const value = checkbox.value;
+                if (value === "lila") {
+                    const lilaValue = document.getElementById(`lilaD_${i}`).value;
+                    if (lilaValue) data.measurements.lila = lilaValue;
+                } else if (value === "lingkarPinggang") {
+                    const lingkarPinggangValue = document.getElementById(`lingkarPinggang_${i}`).value;
+                    if (lingkarPinggangValue) data.measurements.lingkarPinggang = lingkarPinggangValue;
+                }
+            });
         }
 
         allData.push(data);
@@ -756,11 +810,11 @@ function getAllLaporanData() {
     return allData;
 }
 
-// Buat paragraf untuk data hasil dengan spacing yang sesuai
+// Buat paragraf untuk data hasil dengan measurements yang dipilih
 function createDataParagraphs(formData) {
     const paragraphs = [];
 
-    // Data dasar dengan format yang sama persis seperti foto ke-1
+    // Data dasar
     paragraphs.push(
         new docx.Paragraph({
             children: [
@@ -809,68 +863,41 @@ function createDataParagraphs(formData) {
         })
     );
 
-    // Tambahkan data berdasarkan kategori
-    if (formData.kategori === "balita" && formData.lila && formData.lika) {
-        paragraphs.push(
-            new docx.Paragraph({
-                children: [
-                    new docx.TextRun({
-                        text: `LILA : ${formData.lila} cm`,
-                        size: 22,
-                    }),
-                ],
-                spacing: { after: 100 },
-            }),
-            new docx.Paragraph({
-                children: [
-                    new docx.TextRun({
-                        text: `LIKA : ${formData.lika} cm`,
-                        size: 22,
-                    }),
-                ],
-                spacing: { after: 100 },
-            })
-        );
+    // Tambahkan data pengukuran yang dipilih
+    if (formData.measurements) {
+        Object.keys(formData.measurements).forEach(measurementType => {
+            const value = formData.measurements[measurementType];
+            let label = "";
 
-        if (formData.lingkarPerut) {
-            paragraphs.push(
-                new docx.Paragraph({
-                    children: [
-                        new docx.TextRun({
-                            text: `Lp : ${formData.lingkarPerut} cm`,
-                            size: 22,
-                        }),
-                    ],
-                    spacing: { after: 100 },
-                })
-            );
-        }
-    } else if (formData.kategori === "dewasa") {
-        if (formData.pilihanPengukuran === "lila" && formData.lilaD) {
-            paragraphs.push(
-                new docx.Paragraph({
-                    children: [
-                        new docx.TextRun({
-                            text: `LILA : ${formData.lilaD} cm`,
-                            size: 22,
-                        }),
-                    ],
-                    spacing: { after: 100 },
-                })
-            );
-        } else if (formData.pilihanPengukuran === "pinggang" && formData.lingkarPinggang) {
-            paragraphs.push(
-                new docx.Paragraph({
-                    children: [
-                        new docx.TextRun({
-                            text: `Lingkar Pinggang : ${formData.lingkarPinggang} cm`,
-                            size: 22,
-                        }),
-                    ],
-                    spacing: { after: 100 },
-                })
-            );
-        }
+            switch (measurementType) {
+                case 'lila':
+                    label = 'LILA';
+                    break;
+                case 'lika':
+                    label = 'LIKA';
+                    break;
+                case 'lingkarPerut':
+                    label = 'Lp';
+                    break;
+                case 'lingkarPinggang':
+                    label = 'Lingkar Pinggang';
+                    break;
+            }
+
+            if (label && value) {
+                paragraphs.push(
+                    new docx.Paragraph({
+                        children: [
+                            new docx.TextRun({
+                                text: `${label} : ${value} cm`,
+                                size: 22,
+                            }),
+                        ],
+                        spacing: { after: 100 },
+                    })
+                );
+            }
+        });
     }
 
     paragraphs.push(
