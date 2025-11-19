@@ -1,3 +1,5 @@
+/* ===== STYLE.CSS - IMPROVED DENGAN SMART AGE PARSER STYLING ===== */
+
 body {
     font-family: Arial, sans-serif;
     margin: 0;
@@ -80,7 +82,132 @@ textarea {
     flex: 1;
 }
 
-button[type="submit"] {
+
+/* ===== SMART AGE PARSER STYLING ===== */
+
+.input-help {
+    font-size: 12px;
+    color: #7f8c8d;
+    margin-top: 5px;
+    font-style: italic;
+}
+
+.parsed-result {
+    margin-top: 8px;
+    padding: 10px;
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    border-radius: 5px;
+    color: #155724;
+    font-weight: 600;
+    display: none;
+    animation: slideDown 0.3s ease;
+}
+
+.parsed-result.show {
+    display: block;
+}
+
+.error-message {
+    margin-top: 8px;
+    padding: 10px;
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 5px;
+    color: #721c24;
+    font-weight: 600;
+    display: none;
+    animation: shake 0.5s ease;
+}
+
+.error-message.show {
+    display: block;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes shake {
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+    25% {
+        transform: translateX(-5px);
+    }
+    75% {
+        transform: translateX(5px);
+    }
+}
+
+
+/* ===== BUTTON GROUP - UPDATED ===== */
+
+.button-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.btn-primary,
+.btn-secondary {
+    flex: 1;
+    padding: 15px 30px;
+    border: none;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background: linear-gradient(45deg, #3498db, #2980b9);
+    color: white;
+    box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+}
+
+.btn-secondary {
+    background: linear-gradient(45deg, #e74c3c, #c0392b);
+    color: white;
+    box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+}
+
+.btn-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4);
+}
+
+.btn-primary:disabled,
+.btn-secondary:disabled {
+    background: #95a5a6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.btn-primary:active,
+.btn-secondary:active {
+    transform: translateY(0);
+}
+
+
+/* Legacy button styling - keep for backward compatibility */
+
+button[type="submit"]:not(.btn-primary):not(.btn-secondary) {
     background: linear-gradient(45deg, #3498db, #2980b9);
     color: white;
     padding: 15px 30px;
@@ -94,12 +221,12 @@ button[type="submit"] {
     transition: transform 0.2s, box-shadow 0.2s;
 }
 
-button[type="submit"]:hover {
+button[type="submit"]:not(.btn-primary):not(.btn-secondary):hover {
     transform: translateY(-2px);
     box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
 }
 
-button[type="submit"]:disabled {
+button[type="submit"]:not(.btn-primary):not(.btn-secondary):disabled {
     background: #95a5a6;
     cursor: not-allowed;
     transform: none;
@@ -137,6 +264,9 @@ button[type="submit"]:disabled {
     border: 1px solid #e74c3c;
 }
 
+
+/* ===== LAPORAN SECTIONS ===== */
+
 .laporan-section {
     border: 2px solid #e9ecef;
     border-radius: 10px;
@@ -169,6 +299,9 @@ button[type="submit"]:disabled {
     color: #e74c3c;
     border-bottom-color: #e74c3c;
 }
+
+
+/* ===== CATEGORY SPECIFIC FIELDS ===== */
 
 .balita-fields {
     background-color: #fff3cd;
@@ -217,6 +350,9 @@ button[type="submit"]:disabled {
     border-color: #138496;
     box-shadow: 0 0 0 0.2rem rgba(23, 162, 184, 0.25);
 }
+
+
+/* ===== CHECKBOX GROUP ===== */
 
 .checkbox-group {
     display: flex;
@@ -286,6 +422,9 @@ button[type="submit"]:disabled {
     font-weight: bold;
 }
 
+
+/* ===== PENGUKURAN OPTIONS ===== */
+
 .pengukuran-option {
     background-color: rgba(255, 255, 255, 0.7);
     border: 1px solid #17a2b8;
@@ -343,6 +482,9 @@ button[type="submit"]:disabled {
         transform: translateY(0);
     }
 }
+
+
+/* ===== DROP ZONE ===== */
 
 .drop-zone {
     border: 3px dashed #bdc3c7;
@@ -443,18 +585,8 @@ button[type="submit"]:disabled {
     }
 }
 
-@keyframes shake {
-    0%,
-    100% {
-        transform: translateX(0);
-    }
-    25% {
-        transform: translateX(-5px);
-    }
-    75% {
-        transform: translateX(5px);
-    }
-}
+
+/* ===== PHOTO PREVIEW ===== */
 
 .photo-preview {
     margin-top: 15px;
@@ -532,6 +664,9 @@ button[type="submit"]:disabled {
     transform: scale(0.95);
 }
 
+
+/* ===== IMAGE MODAL ===== */
+
 .image-modal {
     display: none;
     position: fixed;
@@ -587,6 +722,9 @@ button[type="submit"]:disabled {
     background: rgba(231, 76, 60, 0.8);
     transform: scale(1.1);
 }
+
+
+/* ===== PROGRESS BAR ===== */
 
 .progress-container {
     margin: 20px 0;
@@ -649,6 +787,9 @@ button[type="submit"]:disabled {
     font-weight: bold;
     color: #28a745;
 }
+
+
+/* ===== WHATSAPP FLOAT ===== */
 
 .whatsapp-float {
     position: fixed;
@@ -745,7 +886,7 @@ button[type="submit"]:disabled {
 }
 
 
-/* Preview Panel Styles */
+/* ===== PREVIEW PANEL ===== */
 
 .btn-toggle-preview {
     position: fixed;
@@ -946,6 +1087,22 @@ button[type="submit"]:disabled {
     padding-top: 8px;
 }
 
+
+/* ===== PDF PAGE STYLING (for PDF generation) ===== */
+
+.pdf-page {
+    background: white;
+    width: 210mm;
+    min-height: 297mm;
+    padding: 20px;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+    page-break-after: always;
+}
+
+
+/* ===== SCROLLBAR ===== */
+
 ::-webkit-scrollbar {
     width: 8px;
 }
@@ -963,6 +1120,9 @@ button[type="submit"]:disabled {
     background: #555;
 }
 
+
+/* ===== RESPONSIVE ===== */
+
 @media (max-width: 1200px) {
     .preview-panel {
         width: 350px;
@@ -979,6 +1139,13 @@ button[type="submit"]:disabled {
     .row {
         flex-direction: column;
         gap: 10px;
+    }
+    .button-group {
+        flex-direction: column;
+    }
+    .btn-primary,
+    .btn-secondary {
+        width: 100%;
     }
     .laporan-section {
         padding: 15px;
