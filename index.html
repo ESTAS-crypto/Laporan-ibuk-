@@ -17,6 +17,30 @@
 </head>
 
 <body>
+    <!-- Login Panel -->
+    <div id="loginPanel" class="login-panel">
+        <div class="login-content">
+            <div class="login-title">🔐 Login untuk Auto-Save</div>
+            <div class="login-form">
+                <input type="text" id="usernameInput" placeholder="Masukkan nama Anda..." maxlength="20" />
+                <button type="button" id="loginBtn" class="btn-login">Masuk</button>
+            </div>
+            <div class="login-note">Data akan otomatis tersimpan & expired setelah 3 hari</div>
+            <div id="authMessage" class="auth-message" style="display: none;"></div>
+        </div>
+    </div>
+
+    <!-- User Info Bar (shown when logged in) -->
+    <div id="userInfo" class="user-info-bar" style="display: none;">
+        <div class="user-info-content">
+            <span class="user-label">👤 Login sebagai: <strong id="usernameDisplay"></strong></span>
+            <div class="user-actions">
+                <button type="button" id="saveBtn" class="btn-save">💾 Simpan</button>
+                <button type="button" id="logoutBtn" class="btn-logout">Keluar</button>
+            </div>
+        </div>
+    </div>
+
     <div class="main-wrapper">
         <!-- Form Container -->
         <div class="form-container">
@@ -373,6 +397,83 @@
     <!-- Load Scripts -->
     <script src="script.js"></script>
     <script src="stylepdf.js"></script>
+    <script src="auth.js"></script>
+
+    <script>
+        // Initialize auth system after all scripts loaded
+        document.addEventListener('DOMContentLoaded', function () {
+            // Init auth
+            if (typeof AuthSystem !== 'undefined') {
+                AuthSystem.init();
+            }
+
+            // Login button
+            const loginBtn = document.getElementById('loginBtn');
+            const usernameInput = document.getElementById('usernameInput');
+
+            if (loginBtn) {
+                loginBtn.addEventListener('click', function () {
+                    const username = usernameInput.value.trim();
+                    if (!username) {
+                        AuthSystem.showMessage('Masukkan nama Anda!', true);
+                        return;
+                    }
+                    const result = AuthSystem.login(username);
+                    AuthSystem.showMessage(result.message, !result.success);
+                    if (result.success) {
+                        AuthSystem.updateUI();
+                    }
+                });
+            }
+
+            // Enter key to login
+            if (usernameInput) {
+                usernameInput.addEventListener('keypress', function (e) {
+                    if (e.key === 'Enter') {
+                        loginBtn.click();
+                    }
+                });
+            }
+
+            // Save button
+            const saveBtn = document.getElementById('saveBtn');
+            if (saveBtn) {
+                saveBtn.addEventListener('click', async function () {
+                    saveBtn.disabled = true;
+                    saveBtn.textContent = '⏳ Menyimpan...';
+                    const result = await AuthSystem.save();
+                    AuthSystem.showMessage(result.message, !result.success);
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = '💾 Simpan';
+                });
+            }
+
+            // Logout button
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async function () {
+                    // Save before logout
+                    await AuthSystem.save();
+                    const result = AuthSystem.logout();
+                    AuthSystem.showMessage(result.message, !result.success);
+                    AuthSystem.updateUI();
+                    // Reload page to clear form
+                    setTimeout(() => location.reload(), 1500);
+                });
+            }
+
+            // Auto-save on form change (debounced)
+            let saveTimeout;
+            document.getElementById('laporanForm')?.addEventListener('change', function () {
+                if (AuthSystem.getCurrentUser()) {
+                    clearTimeout(saveTimeout);
+                    saveTimeout = setTimeout(async () => {
+                        await AuthSystem.save();
+                    }, 5000); // Auto save after 5 seconds of no changes
+                }
+            });
+        });
+    </script>
 </body>
 
 </html>

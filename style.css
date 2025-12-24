@@ -42,6 +42,168 @@ body {
     line-height: 1.6;
 }
 
+/* ===== LOGIN PANEL ===== */
+.login-panel {
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    padding: 20px;
+    text-align: center;
+}
+
+.login-content {
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.login-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: 12px;
+}
+
+.login-form {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+.login-form input {
+    flex: 1;
+    max-width: 250px;
+    padding: 10px 14px;
+    border: 1px solid var(--color-border-dark);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+}
+
+.login-form input:focus {
+    outline: none;
+    border-color: var(--color-accent);
+}
+
+.btn-login {
+    padding: 10px 20px;
+    background: var(--color-text);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background var(--transition);
+}
+
+.btn-login:hover {
+    background: var(--color-primary-hover);
+}
+
+.login-note {
+    font-size: 12px;
+    color: var(--color-text-light);
+}
+
+.auth-message {
+    margin-top: 10px;
+    padding: 10px 14px;
+    border-radius: var(--radius-md);
+    font-size: 13px;
+}
+
+.auth-message.success {
+    background: var(--color-success-bg);
+    color: #2e7d32;
+    border: 1px solid #c8e6c9;
+}
+
+.auth-message.error {
+    background: var(--color-error-bg);
+    color: #c62828;
+    border: 1px solid #ffcdd2;
+}
+
+/* ===== USER INFO BAR ===== */
+.user-info-bar {
+    background: var(--color-text);
+    color: white;
+    padding: 10px 20px;
+}
+
+.user-info-content {
+    max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.user-label {
+    font-size: 13px;
+}
+
+.user-label strong {
+    color: #90caf9;
+}
+
+.user-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-save,
+.btn-logout {
+    padding: 6px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+.btn-save {
+    background: #4caf50;
+    color: white;
+    border: none;
+}
+
+.btn-save:hover {
+    background: #43a047;
+}
+
+.btn-save:disabled {
+    background: #81c784;
+    cursor: wait;
+}
+
+.btn-logout {
+    background: transparent;
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.btn-logout:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+@media (max-width: 600px) {
+    .login-form {
+        flex-direction: column;
+    }
+
+    .login-form input {
+        max-width: 100%;
+    }
+
+    .user-info-content {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+
 /* ===== LAYOUT ===== */
 .main-wrapper {
     display: block;

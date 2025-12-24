@@ -376,7 +376,7 @@ function updatePreview() {
 
             let usiaDisplay = usiaRaw;
             if (parsedAgeDataMap[i]) {
-                usiaDisplay = parsedAgeDataMap[i].formatted;
+                usiaDisplay = parsedAgeDataMap[i].formatted.replace(' ⚠️ auto-detect', '');
             }
 
             let measurements = "";
@@ -1110,7 +1110,7 @@ function getAllLaporanData() {
             kategori: kategori,
             tanggal: document.getElementById(`tanggal_${i}`).value,
             nama: document.getElementById(`nama_${i}`).value,
-            usia: parsedAgeDataMap[i].formatted,
+            usia: parsedAgeDataMap[i].formatted.replace(' ⚠️ auto-detect', ''),
             usiaRaw: usiaRaw,
             alamat: document.getElementById(`alamat_${i}`).value,
             beratBadan: document.getElementById(`beratBadan_${i}`).value,
