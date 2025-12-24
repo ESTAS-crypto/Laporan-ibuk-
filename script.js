@@ -25,65 +25,158 @@ const WHATSAPP_CONFIG = {
     defaultMessage: "Halo, saya butuh bantuan dengan aplikasi Generator Laporan Kunjungan Rumah.",
 };
 
-// ===== SMART AGE PARSER =====
+// ===== SMART AGE PARSER (ENHANCED) =====
 function parseAge(input) {
     if (!input || typeof input !== 'string') return null;
 
+    // Normalize input: lowercase, replace comma with dot for decimals, trim spaces
     let normalized = input.trim().toLowerCase().replace(/\s+/g, ' ');
     const normalizedForParsing = normalized.replace(/,/g, '.');
 
-    const patterns = [
-        /^(\d+\.?\d*)\s*(bulan|bln|month)$/,
-        /^(\d+\.?\d*)\s*(tahun|thn|th|year|yr)$/
-    ];
+    let totalBulan = 0;
+    let totalTahun = 0;
+    let detectedFormat = '';
 
-    let match = null;
-    let unitType = null;
+    // Pattern 1: Kombinasi tahun dan bulan (e.g., "1 tahun 3 bulan", "1thn 3bln", "1th3bln")
+    const comboPattern = /^(\d+\.?\d*)\s*(tahun|thn|th|year|yr)\s*(\d+\.?\d*)?\s*(bulan|bln|month|bl)?$/;
+    const comboMatch = normalizedForParsing.match(comboPattern);
 
-    for (let pattern of patterns) {
-        match = normalizedForParsing.match(pattern);
-        if (match) {
-            unitType = (pattern === patterns[0]) ? 'bulan' : 'tahun';
-            break;
+    if (comboMatch) {
+        const tahunVal = parseFloat(comboMatch[1]) || 0;
+        const bulanVal = parseFloat(comboMatch[3]) || 0;
+
+        totalTahun = tahunVal + (bulanVal / 12);
+        totalBulan = Math.round(tahunVal * 12 + bulanVal);
+        detectedFormat = 'combo';
+    }
+
+    // Pattern 2: Hanya bulan (e.g., "10,4bulan", "3.5 bln", "24 month")
+    if (!detectedFormat) {
+        const bulanPattern = /^(\d+\.?\d*)\s*(bulan|bln|month|bl)$/;
+        const bulanMatch = normalizedForParsing.match(bulanPattern);
+
+        if (bulanMatch) {
+            const nilai = parseFloat(bulanMatch[1]);
+            if (!isNaN(nilai) && nilai >= 0) {
+                totalBulan = Math.round(nilai);
+                totalTahun = nilai / 12;
+                detectedFormat = 'bulan';
+            }
         }
     }
 
-    if (!match) return null;
+    // Pattern 3: Hanya tahun (e.g., "3,5thn", "2 tahun", "5 th", "1year")
+    if (!detectedFormat) {
+        const tahunPattern = /^(\d+\.?\d*)\s*(tahun|thn|th|year|yr)$/;
+        const tahunMatch = normalizedForParsing.match(tahunPattern);
 
-    const nilai = parseFloat(match[1]);
-    if (isNaN(nilai) || nilai < 0) return null;
-
-    let totalBulan, totalTahun;
-
-    if (unitType === 'bulan') {
-        totalBulan = Math.round(nilai);
-        totalTahun = nilai / 12;
-    } else {
-        totalTahun = nilai;
-        totalBulan = Math.round(nilai * 12);
+        if (tahunMatch) {
+            const nilai = parseFloat(tahunMatch[1]);
+            if (!isNaN(nilai) && nilai >= 0) {
+                totalTahun = nilai;
+                totalBulan = Math.round(nilai * 12);
+                detectedFormat = 'tahun';
+            }
+        }
     }
 
-    const nilaiFormatted = nilai.toString().replace('.', ',');
+    // Pattern 4: Angka saja tanpa satuan - akan ditentukan berdasarkan nilai
+    // Jika <= 60, anggap bulan. Jika > 60, anggap tahun.
+    if (!detectedFormat) {
+        const numberOnlyPattern = /^(\d+\.?\d*)$/;
+        const numberMatch = normalizedForParsing.match(numberOnlyPattern);
 
+        if (numberMatch) {
+            const nilai = parseFloat(numberMatch[1]);
+            if (!isNaN(nilai) && nilai >= 0) {
+                // Heuristic: jika <= 60, kemungkinan bulan; jika > 60, kemungkinan tahun
+                if (nilai <= 60) {
+                    totalBulan = Math.round(nilai);
+                    totalTahun = nilai / 12;
+                    detectedFormat = 'bulan_auto';
+                } else {
+                    // Nilai >60 anggap tahun (tidak mungkin usia >60 dalam bulan untuk balita)
+                    totalTahun = nilai;
+                    totalBulan = Math.round(nilai * 12);
+                    detectedFormat = 'tahun_auto';
+                }
+            }
+        }
+    }
+
+    // Pattern 5: Format dengan "b" atau "t" saja (e.g., "10b", "3t")
+    if (!detectedFormat) {
+        const shortPattern = /^(\d+\.?\d*)\s*([bt])$/;
+        const shortMatch = normalizedForParsing.match(shortPattern);
+
+        if (shortMatch) {
+            const nilai = parseFloat(shortMatch[1]);
+            const unit = shortMatch[2];
+            if (!isNaN(nilai) && nilai >= 0) {
+                if (unit === 'b') {
+                    totalBulan = Math.round(nilai);
+                    totalTahun = nilai / 12;
+                    detectedFormat = 'bulan';
+                } else {
+                    totalTahun = nilai;
+                    totalBulan = Math.round(nilai * 12);
+                    detectedFormat = 'tahun';
+                }
+            }
+        }
+    }
+
+    // Jika tidak ada format yang cocok, return null
+    if (!detectedFormat) return null;
+
+    // Validasi nilai tidak negatif
+    if (totalBulan < 0 || totalTahun < 0) return null;
+
+    // Format output string
     let formattedString;
-    if (unitType === 'bulan') {
-        formattedString = `${nilaiFormatted} bulan`;
+    let displaySatuan;
+
+    if (detectedFormat === 'combo') {
+        const tahunBulat = Math.floor(totalTahun);
+        const sisaBulan = totalBulan - (tahunBulat * 12);
+
+        if (tahunBulat > 0 && sisaBulan > 0) {
+            formattedString = `${tahunBulat} tahun ${sisaBulan} bulan`;
+        } else if (tahunBulat > 0) {
+            formattedString = `${tahunBulat} tahun`;
+        } else {
+            formattedString = `${sisaBulan} bulan`;
+        }
+        formattedString += ` (${totalBulan} bulan total)`;
+        displaySatuan = 'combo';
+    } else if (detectedFormat.startsWith('bulan')) {
+        formattedString = `${totalBulan} bulan`;
         if (totalBulan >= 12) {
             const tahunFormatted = totalTahun.toFixed(1).replace('.', ',');
             formattedString += ` (${tahunFormatted} tahun)`;
         }
-    } else {
+        displaySatuan = 'bulan';
+        if (detectedFormat === 'bulan_auto') {
+            formattedString += ' ⚠️ auto-detect';
+        }
+    } else { // tahun atau tahun_auto
+        const nilaiFormatted = totalTahun.toString().replace('.', ',');
         formattedString = `${nilaiFormatted} tahun`;
         formattedString += ` (${totalBulan} bulan)`;
+        displaySatuan = 'tahun';
+        if (detectedFormat === 'tahun_auto') {
+            formattedString += ' ⚠️ auto-detect';
+        }
     }
 
     return {
-        nilai: nilai,
-        satuan: unitType,
+        nilai: detectedFormat.startsWith('bulan') ? totalBulan : totalTahun,
+        satuan: displaySatuan,
         formatted: formattedString,
         bulan: totalBulan,
         tahun: totalTahun,
-        input: input
+        input: input,
+        autoDetected: detectedFormat.endsWith('_auto')
     };
 }
 
@@ -125,7 +218,7 @@ function handleUsiaInput(laporanIndex) {
     const ageData = parseAge(input);
 
     if (!ageData) {
-        usiaErrorDiv.textContent = '❌ Format tidak valid. Contoh: 10,4bulan, 3,5thn, 2tahun';
+        usiaErrorDiv.innerHTML = '❌ Format tidak valid.<br>Contoh: <b>10bulan</b>, <b>3,5thn</b>, <b>2tahun</b>, <b>1thn 3bulan</b>, atau <b>24</b> (angka saja)';
         usiaErrorDiv.classList.add('show');
         return;
     }
@@ -141,7 +234,13 @@ function handleUsiaInput(laporanIndex) {
     }
 
     parsedAgeDataMap[laporanIndex] = ageData;
-    usiaParsedDiv.textContent = '✓ Umur diparsing sebagai: ' + ageData.formatted;
+
+    // Berikan warning jika menggunakan auto-detect
+    if (ageData.autoDetected) {
+        usiaParsedDiv.innerHTML = '⚠️ Umur diparsing otomatis sebagai: <b>' + ageData.formatted.replace(' ⚠️ auto-detect', '') + '</b><br><small style="color:#f39c12">Tambahkan satuan (bulan/thn) untuk hasil lebih akurat</small>';
+    } else {
+        usiaParsedDiv.innerHTML = '✓ Umur diparsing sebagai: <b>' + ageData.formatted + '</b>';
+    }
     usiaParsedDiv.classList.add('show');
 
     updatePreview();
@@ -176,7 +275,7 @@ function openWhatsApp(message = WHATSAPP_CONFIG.defaultMessage) {
 function initWhatsAppFloat() {
     const whatsappFloat = document.getElementById("whatsappFloat");
     if (whatsappFloat) {
-        whatsappFloat.addEventListener("click", function() {
+        whatsappFloat.addEventListener("click", function () {
             openWhatsApp();
         });
     }
@@ -196,7 +295,7 @@ function closeImageModal() {
     document.body.style.overflow = "auto";
 }
 
-document.addEventListener("keydown", function(event) {
+document.addEventListener("keydown", function (event) {
     if (event.key === "Escape") {
         closeImageModal();
     }
@@ -347,7 +446,7 @@ function updatePreview() {
                   ${fotoSrc
                     ? `<img src="${fotoSrc}" class="preview-photo" alt="Foto" />`
                     : `<div class="no-photo">Belum ada foto</div>`
-                  }
+                }
                 </td>
               </tr>
             </tbody>
@@ -734,9 +833,9 @@ function generateLaporanForms(jumlah) {
             <div class="form-group">
               <label for="usia_${i}">Usia:</label>
               <input type="text" id="usia_${i}" name="usia_${i}" required 
-                     placeholder="Contoh: 10,4bulan, 3,5thn, 2tahun" />
+                     placeholder="Contoh: 24, 10bulan, 3,5thn, 1thn 3bulan" />
               <div class="input-help">
-                Format: angka + satuan (bulan/thn/tahun). Desimal boleh pakai koma (,) atau titik (.)
+                Format fleksibel: angka saja (auto-detect), angka+satuan (bulan/thn/tahun), atau kombinasi (1thn 3bulan)
               </div>
               <div id="usiaParsed_${i}" class="parsed-result"></div>
               <div id="usiaError_${i}" class="error-message"></div>
@@ -1070,7 +1169,7 @@ function createImprovedWordTable(laporan, bulan, tahun, laporanIndex) {
 
     // Build HASIL cell content dengan format yang rapi
     const hasilParagraphs = [];
-    
+
     // Nama
     hasilParagraphs.push(new docx.Paragraph({
         children: [
@@ -1079,7 +1178,7 @@ function createImprovedWordTable(laporan, bulan, tahun, laporanIndex) {
         ],
         spacing: { after: 80, before: 0 },
     }));
-    
+
     // Usia
     hasilParagraphs.push(new docx.Paragraph({
         children: [
@@ -1088,7 +1187,7 @@ function createImprovedWordTable(laporan, bulan, tahun, laporanIndex) {
         ],
         spacing: { after: 80, before: 0 },
     }));
-    
+
     // Alamat
     hasilParagraphs.push(new docx.Paragraph({
         children: [
@@ -1097,7 +1196,7 @@ function createImprovedWordTable(laporan, bulan, tahun, laporanIndex) {
         ],
         spacing: { after: 80, before: 0 },
     }));
-    
+
     // BB
     hasilParagraphs.push(new docx.Paragraph({
         children: [
@@ -1106,7 +1205,7 @@ function createImprovedWordTable(laporan, bulan, tahun, laporanIndex) {
         ],
         spacing: { after: 80, before: 0 },
     }));
-    
+
     // TB
     hasilParagraphs.push(new docx.Paragraph({
         children: [
@@ -1115,7 +1214,7 @@ function createImprovedWordTable(laporan, bulan, tahun, laporanIndex) {
         ],
         spacing: { after: 80, before: 0 },
     }));
-    
+
     // Measurements
     if (laporan.measurements) {
         Object.keys(laporan.measurements).forEach((measurementType) => {
@@ -1140,7 +1239,7 @@ function createImprovedWordTable(laporan, bulan, tahun, laporanIndex) {
             }
         });
     }
-    
+
     // Tensi (tidak tampil untuk balita)
     if (laporan.kategori !== 'balita' && laporan.tensi && laporan.tensi !== '-') {
         hasilParagraphs.push(new docx.Paragraph({
@@ -1156,13 +1255,13 @@ function createImprovedWordTable(laporan, bulan, tahun, laporanIndex) {
             spacing: { after: 120, before: 0 },
         }));
     }
-    
+
     // Keluhan
     hasilParagraphs.push(new docx.Paragraph({
         children: [new docx.TextRun({ text: "Keluhan:", bold: true, size: 20 })],
         spacing: { after: 80, before: 0 },
     }));
-    
+
     const keluhanLines = laporan.keluhan.split('\n').filter(line => line.trim() !== '');
     keluhanLines.forEach(line => {
         hasilParagraphs.push(new docx.Paragraph({
@@ -1170,19 +1269,19 @@ function createImprovedWordTable(laporan, bulan, tahun, laporanIndex) {
             spacing: { after: 80, before: 0 },
         }));
     });
-    
+
     // Spacing
     hasilParagraphs.push(new docx.Paragraph({
         children: [new docx.TextRun({ text: "", size: 20 })],
         spacing: { after: 120, before: 0 },
     }));
-    
+
     // Tindak Lanjut
     hasilParagraphs.push(new docx.Paragraph({
         children: [new docx.TextRun({ text: "Tindak Lanjut:", bold: true, size: 20 })],
         spacing: { after: 80, before: 0 },
     }));
-    
+
     const tindakLanjutLines = laporan.tindakLanjut.split('\n').filter(line => line.trim() !== '');
     tindakLanjutLines.forEach(line => {
         hasilParagraphs.push(new docx.Paragraph({
@@ -1203,7 +1302,7 @@ function createImprovedWordTable(laporan, bulan, tahun, laporanIndex) {
                 children: [
                     new docx.ImageRun({
                         data: laporan.fotoData,
-                        transformation: { 
+                        transformation: {
                             width: 120,  // Lebih kecil agar pas di kolom
                             height: 160  // Proporsional 3:4
                         },
@@ -1371,7 +1470,7 @@ function createImprovedWordTable(laporan, bulan, tahun, laporanIndex) {
 function createImprovedLaporanSection(laporan, bulan, tahun, laporanIndex) {
     return {
         properties: {
-            page: { 
+            page: {
                 margin: { top: 720, right: 720, bottom: 720, left: 720 },
             },
         },
@@ -1392,10 +1491,10 @@ function createImprovedLaporanSection(laporan, bulan, tahun, laporanIndex) {
                 alignment: docx.AlignmentType.CENTER,
                 spacing: { after: 200 },
             }),
-            
+
             // Tabel
             createImprovedWordTable(laporan, bulan, tahun, laporanIndex),
-            
+
             // Footer dengan kader
             new docx.Paragraph({
                 children: [
