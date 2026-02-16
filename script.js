@@ -58,7 +58,7 @@ function parseAge(input) {
         if (bulanMatch) {
             const nilai = parseFloat(bulanMatch[1]);
             if (!isNaN(nilai) && nilai >= 0) {
-                totalBulan = Math.round(nilai);
+                totalBulan = nilai;
                 totalTahun = nilai / 12;
                 detectedFormat = 'bulan';
             }
@@ -91,13 +91,13 @@ function parseAge(input) {
             if (!isNaN(nilai) && nilai >= 0) {
                 // Heuristic: jika <= 60, kemungkinan bulan; jika > 60, kemungkinan tahun
                 if (nilai <= 60) {
-                    totalBulan = Math.round(nilai);
+                    totalBulan = nilai;
                     totalTahun = nilai / 12;
                     detectedFormat = 'bulan_auto';
                 } else {
                     // Nilai >60 anggap tahun (tidak mungkin usia >60 dalam bulan untuk balita)
                     totalTahun = nilai;
-                    totalBulan = Math.round(nilai * 12);
+                    totalBulan = nilai * 12;
                     detectedFormat = 'tahun_auto';
                 }
             }
@@ -114,12 +114,12 @@ function parseAge(input) {
             const unit = shortMatch[2];
             if (!isNaN(nilai) && nilai >= 0) {
                 if (unit === 'b') {
-                    totalBulan = Math.round(nilai);
+                    totalBulan = nilai;
                     totalTahun = nilai / 12;
                     detectedFormat = 'bulan';
                 } else {
                     totalTahun = nilai;
-                    totalBulan = Math.round(nilai * 12);
+                    totalBulan = nilai * 12;
                     detectedFormat = 'tahun';
                 }
             }
@@ -147,10 +147,12 @@ function parseAge(input) {
         } else {
             formattedString = `${sisaBulan} bulan`;
         }
-        formattedString += ` (${totalBulan} bulan total)`;
+
         displaySatuan = 'combo';
     } else if (detectedFormat.startsWith('bulan')) {
-        formattedString = `${totalBulan} bulan`;
+        // Format bulan: tampilkan desimal jika ada (e.g., 5,2 bulan)
+        const bulanDisplay = Number.isInteger(totalBulan) ? totalBulan.toString() : totalBulan.toString().replace('.', ',');
+        formattedString = `${bulanDisplay} bulan`;
         if (totalBulan >= 12) {
             const tahunFormatted = totalTahun.toFixed(1).replace('.', ',');
             formattedString += ` (${tahunFormatted} tahun)`;
@@ -162,7 +164,6 @@ function parseAge(input) {
     } else { // tahun atau tahun_auto
         const nilaiFormatted = totalTahun.toString().replace('.', ',');
         formattedString = `${nilaiFormatted} tahun`;
-        formattedString += ` (${totalBulan} bulan)`;
         displaySatuan = 'tahun';
         if (detectedFormat === 'tahun_auto') {
             formattedString += ' ⚠️ auto-detect';
@@ -677,6 +678,95 @@ function setupDragAndDrop(laporanIndex) {
     }
 }
 
+// ===== HANDLE PASTE EVENT (Ctrl+V) =====
+function handlePasteEvent(e, laporanIndex) {
+    const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+    if (!items) return;
+
+    for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+            e.preventDefault();
+            const blob = items[i].getAsFile();
+            if (blob) {
+                // Give it a meaningful name
+                const ext = blob.type.split('/')[1] || 'png';
+                const fileName = `paste_foto_${new Date().toISOString().slice(0, 19).replace(/[:-]/g, '')}.${ext}`;
+                const file = new File([blob], fileName, { type: blob.type });
+                handleFileSelection(file, laporanIndex);
+
+                // Visual feedback
+                const dropZone = document.getElementById(`dropZone_${laporanIndex}`);
+                if (dropZone) {
+                    dropZone.classList.add('paste-flash');
+                    setTimeout(() => dropZone.classList.remove('paste-flash'), 600);
+                }
+            }
+            return;
+        }
+    }
+}
+
+// ===== ACTIVE LAPORAN TRACKING FOR CTRL+V =====
+let activeLaporanIndex = 1;
+
+function setActiveLaporan(idx) {
+    if (!idx || isNaN(idx)) return;
+    activeLaporanIndex = idx;
+
+    // Remove active class from all sections
+    document.querySelectorAll('.laporan-section').forEach(s => {
+        s.classList.remove('laporan-active');
+    });
+
+    // Only show indicator when there are multiple laporans (no ambiguity with 1)
+    const allSections = document.querySelectorAll('.laporan-section');
+    if (allSections.length <= 1) return;
+
+    // Add active class to current section
+    const activeSection = document.querySelector(`.laporan-section[data-laporan="${idx}"]`);
+    if (activeSection) {
+        activeSection.classList.add('laporan-active');
+    }
+}
+
+// Track which laporan section the user is interacting with
+document.addEventListener('click', function (e) {
+    const section = e.target.closest('.laporan-section');
+    if (section) {
+        const idx = parseInt(section.getAttribute('data-laporan'));
+        setActiveLaporan(idx);
+    }
+}, true);
+
+document.addEventListener('focusin', function (e) {
+    const section = e.target.closest('.laporan-section');
+    if (section) {
+        const idx = parseInt(section.getAttribute('data-laporan'));
+        setActiveLaporan(idx);
+    }
+});
+
+// ===== GLOBAL CTRL+V LISTENER =====
+// Paste image into the laporan section the user last interacted with
+document.addEventListener('paste', function (e) {
+    // Check if there's an image in clipboard
+    const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+    if (!items) return;
+
+    let hasImage = false;
+    for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+            hasImage = true;
+            break;
+        }
+    }
+
+    if (!hasImage) return;
+
+    // Use the active laporan index (from last click/focus)
+    handlePasteEvent(e, activeLaporanIndex);
+});
+
 async function handleFileSelection(file, laporanIndex) {
     const dropZone = document.getElementById(`dropZone_${laporanIndex}`);
     const previewDiv = document.getElementById(`photoPreview_${laporanIndex}`);
@@ -739,6 +829,7 @@ function resetDropZoneContent(dropZone) {
     content.innerHTML = `
     <div class="upload-icon">📷</div>
     <p><strong>Drag & Drop foto di sini</strong><br>atau klik untuk memilih file</p>
+    <p class="paste-hint">💡 Ctrl+V untuk paste foto dari WhatsApp</p>
     <p class="file-types">Format: JPG, PNG, JPEG (Max 10MB)</p>
   `;
 }
@@ -957,6 +1048,7 @@ function generateLaporanForms(jumlah) {
             <div class="drop-zone-content">
               <div class="upload-icon">📷</div>
               <p><strong>Drag & Drop foto di sini</strong><br>atau klik untuk memilih file</p>
+              <p class="paste-hint">💡 Ctrl+V untuk paste foto dari WhatsApp</p>
               <p class="file-types">Format: JPG, PNG, JPEG (Max 10MB)</p>
             </div>
             <input type="file" id="foto_${i}" name="foto_${i}" accept="image/*" style="display: none;" />

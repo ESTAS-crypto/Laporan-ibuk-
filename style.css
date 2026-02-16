@@ -466,6 +466,41 @@ button[type="submit"]:not(.btn-primary):not(.btn-secondary):disabled {
     color: var(--color-text);
 }
 
+/* ===== ACTIVE LAPORAN INDICATOR (Ctrl+V target) ===== */
+.laporan-section.laporan-active {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 2px rgba(92, 107, 192, 0.15);
+    position: relative;
+}
+
+.laporan-section.laporan-active::after {
+    content: '📋 Ctrl+V aktif di sini';
+    position: absolute;
+    top: -12px;
+    right: 16px;
+    background: var(--color-accent);
+    color: white;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 10px;
+    border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(92, 107, 192, 0.3);
+    animation: fadeInBadge 0.3s ease;
+    z-index: 5;
+}
+
+@keyframes fadeInBadge {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 /* ===== CATEGORY SPECIFIC FIELDS ===== */
 .balita-fields {
     background-color: var(--color-warning-bg);
@@ -705,6 +740,38 @@ button[type="submit"]:not(.btn-primary):not(.btn-secondary):disabled {
     100% {
         transform: rotate(360deg);
     }
+}
+
+/* ===== PASTE FLASH ANIMATION ===== */
+.drop-zone:focus {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+}
+
+.drop-zone.paste-flash {
+    animation: pasteFlash 0.6s ease;
+}
+
+@keyframes pasteFlash {
+    0% {
+        background: var(--color-bg);
+    }
+
+    30% {
+        background: #e8f5e9;
+        border-color: var(--color-success);
+    }
+
+    100% {
+        background: var(--color-bg);
+    }
+}
+
+.paste-hint {
+    font-size: 11px !important;
+    color: var(--color-accent) !important;
+    margin-top: 4px !important;
+    opacity: 0.8;
 }
 
 /* ===== PHOTO PREVIEW ===== */
