@@ -1,5 +1,5 @@
 // ===== SERVICE WORKER - Offline Cache =====
-const CACHE_NAME = 'laporan-kr-v9';
+const CACHE_NAME = 'laporan-kr-v10';
 
 // Files to cache for offline use
 const STATIC_ASSETS = [
@@ -14,7 +14,9 @@ const STATIC_ASSETS = [
     './manifest.json',
     './qris.jpg',
     './icons/icon-192.svg',
-    './icons/icon-512.svg'
+    './icons/icon-512.svg',
+    './icons/icon-192.png',
+    './icons/icon-512.png'
 ];
 
 // CDN libraries to cache
