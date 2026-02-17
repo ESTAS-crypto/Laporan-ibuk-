@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Download APK - Laporan Kunjungan Rumah</title>
+    <meta name="theme-color" content="#5c6bc0" />
+    <link rel="manifest" href="manifest.json" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: #e0e0e0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated background blobs */
+        .bg-blob {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.15;
+            z-index: 0;
+            animation: blobFloat 20s ease-in-out infinite;
+        }
+
+        .bg-blob-1 {
+            width: 400px;
+            height: 400px;
+            background: #7c4dff;
+            top: -100px;
+            right: -100px;
+        }
+
+        .bg-blob-2 {
+            width: 300px;
+            height: 300px;
+            background: #00bcd4;
+            bottom: -50px;
+            left: -50px;
+            animation-delay: -10s;
+        }
+
+        .bg-blob-3 {
+            width: 250px;
+            height: 250px;
+            background: #ff6b6b;
+            top: 50%;
+            left: 50%;
+            animation-delay: -5s;
+        }
+
+        @keyframes blobFloat {
+
+            0%,
+            100% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            33% {
+                transform: translate(30px, -20px) scale(1.1);
+            }
+
+            66% {
+                transform: translate(-20px, 20px) scale(0.9);
+            }
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 40px 0 30px;
+        }
+
+        .header-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            display: block;
+            animation: iconPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes iconPulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #7c4dff, #00bcd4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            font-size: 14px;
+            color: #999;
+        }
+
+        /* Back link */
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #7c4dff;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 20px;
+            background: rgba(124, 77, 255, 0.1);
+            border: 1px solid rgba(124, 77, 255, 0.2);
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+
+        .back-link:hover {
+            background: rgba(124, 77, 255, 0.2);
+        }
+
+        /* Cards */
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 20px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title .icon {
+            font-size: 24px;
+        }
+
+        /* Device info */
+        .device-info {
+            background: rgba(124, 77, 255, 0.1);
+            border: 1px solid rgba(124, 77, 255, 0.3);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .device-info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 13px;
+        }
+
+        .device-info-label {
+            color: #999;
+        }
+
+        .device-info-value {
+            font-weight: 600;
+            color: #7c4dff;
+        }
+
+        /* Download button */
+        .download-section {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .btn-download {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: linear-gradient(135deg, #7c4dff, #536dfe);
+            color: white;
+            border: none;
+            padding: 16px 40px;
+            border-radius: 16px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 8px 30px rgba(124, 77, 255, 0.4);
+            text-decoration: none;
+            font-family: inherit;
+        }
+
+        .btn-download:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 40px rgba(124, 77, 255, 0.6);
+        }
+
+        .btn-download:active {
+            transform: translateY(0);
+        }
+
+        .btn-download .dl-icon {
+            font-size: 24px;
+        }
+
+        .btn-secondary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            color: #ccc;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            font-family: inherit;
+            margin-top: 12px;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+        }
+
+        /* Steps */
+        .steps {
+            counter-reset: step;
+        }
+
+        .step {
+            display: flex;
+            gap: 16px;
+            padding: 16px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .step:last-child {
+            border-bottom: none;
+        }
+
+        .step-number {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #7c4dff, #536dfe);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(124, 77, 255, 0.3);
+        }
+
+        .step-content h4 {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .step-content p {
+            font-size: 13px;
+            color: #999;
+            line-height: 1.5;
+        }
+
+        /* Method selector */
+        .method-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .method-tab {
+            flex: 1;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.03);
+            color: #999;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .method-tab.active {
+            background: rgba(124, 77, 255, 0.15);
+            border-color: rgba(124, 77, 255, 0.5);
+            color: #7c4dff;
+        }
+
+        .method-tab:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .method-content {
+            display: none;
+        }
+
+        .method-content.active {
+            display: block;
+        }
+
+        /* Badge */
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-recommended {
+            background: rgba(76, 175, 80, 0.15);
+            color: #4caf50;
+            border: 1px solid rgba(76, 175, 80, 0.3);
+        }
+
+        .badge-advanced {
+            background: rgba(255, 152, 0, 0.15);
+            color: #ff9800;
+            border: 1px solid rgba(255, 152, 0, 0.3);
+        }
+
+        /* Alert box */
+        .alert {
+            background: rgba(255, 193, 7, 0.08);
+            border: 1px solid rgba(255, 193, 7, 0.25);
+            border-radius: 12px;
+            padding: 14px 16px;
+            font-size: 13px;
+            color: #ffc107;
+            margin-top: 16px;
+            line-height: 1.6;
+        }
+
+        .alert strong {
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        /* PWA Status */
+        .status-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .status-item {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .status-icon {
+            font-size: 24px;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .status-label {
+            font-size: 11px;
+            color: #999;
+        }
+
+        .status-value {
+            font-size: 13px;
+            font-weight: 600;
+            margin-top: 2px;
+        }
+
+        .status-ok {
+            color: #4caf50;
+        }
+
+        .status-warn {
+            color: #ff9800;
+        }
+
+        /* Features list */
+        .features {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            padding: 10px 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+        }
+
+        .feature-item .check {
+            color: #4caf50;
+            font-size: 16px;
+        }
+
+        /* Footer */
+        .footer-note {
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            padding: 20px 0 40px;
+        }
+
+        /* Loading animation */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(124, 77, 255, 0.2);
+            border-top-color: #7c4dff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-text {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        /* Responsive */
+        @media (max-width: 400px) {
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .features {
+                grid-template-columns: 1fr;
+            }
+
+            .status-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .method-tabs {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Animated background -->
+    <div class="bg-blob bg-blob-1"></div>
+    <div class="bg-blob bg-blob-2"></div>
+    <div class="bg-blob bg-blob-3"></div>
+
+    <div class="container">
+        <a href="index.html" class="back-link">← Kembali ke Aplikasi</a>
+
+        <!-- Header -->
+        <div class="header">
+            <span class="header-icon">📦</span>
+            <h1>Download APK</h1>
+            <p>Install sebagai aplikasi Android (.apk)</p>
+        </div>
+
+        <!-- Device Info -->
+        <div class="card">
+            <div class="card-title">
+                <span class="icon">📱</span>
+                Info Perangkat Anda
+            </div>
+            <div class="device-info">
+                <div class="device-info-row">
+                    <span class="device-info-label">Browser</span>
+                    <span class="device-info-value" id="detectedBrowser">Mendeteksi...</span>
+                </div>
+                <div class="device-info-row">
+                    <span class="device-info-label">Platform</span>
+                    <span class="device-info-value" id="detectedPlatform">Mendeteksi...</span>
+                </div>
+                <div class="device-info-row">
+                    <span class="device-info-label">PWA Ready</span>
+                    <span class="device-info-value" id="pwaStatus">Mengecek...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- PWA Status -->
+        <div class="card">
+            <div class="card-title">
+                <span class="icon">✅</span>
+                Status PWA
+            </div>
+            <div class="status-grid">
+                <div class="status-item">
+                    <span class="status-icon" id="swIcon">⏳</span>
+                    <div class="status-label">Service Worker</div>
+                    <div class="status-value" id="swStatus">Checking...</div>
+                </div>
+                <div class="status-item">
+                    <span class="status-icon" id="manifestIcon">⏳</span>
+                    <div class="status-label">Manifest</div>
+                    <div class="status-value" id="manifestStatus">Checking...</div>
+                </div>
+                <div class="status-item">
+                    <span class="status-icon" id="httpsIcon">⏳</span>
+                    <div class="status-label">HTTPS</div>
+                    <div class="status-value" id="httpsStatus">Checking...</div>
+                </div>
+                <div class="status-item">
+                    <span class="status-icon" id="offlineIcon">⏳</span>
+                    <div class="status-label">Offline</div>
+                    <div class="status-value" id="offlineStatus">Checking...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Install Methods -->
+        <div class="card">
+            <div class="card-title">
+                <span class="icon">🚀</span>
+                Cara Install
+            </div>
+
+            <div class="method-tabs">
+                <button class="method-tab active" onclick="switchMethod('pwabuilder')">
+                    PWABuilder
+                    <br><span class="badge badge-recommended">Mudah</span>
+                </button>
+                <button class="method-tab" onclick="switchMethod('direct')">
+                    Install Langsung
+                    <br><span class="badge badge-recommended">Cepat</span>
+                </button>
+                <button class="method-tab" onclick="switchMethod('bubblewrap')">
+                    Bubblewrap
+                    <br><span class="badge badge-advanced">Developer</span>
+                </button>
+            </div>
+
+            <!-- Method 1: PWABuilder -->
+            <div class="method-content active" id="method-pwabuilder">
+                <p style="font-size: 13px; color: #bbb; margin-bottom: 16px;">
+                    Gunakan <b>PWABuilder</b> (gratis dari Microsoft) untuk generate file APK dari web ini.
+                </p>
+
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Buka PWABuilder</h4>
+                            <p>Klik tombol di bawah untuk membuka PWABuilder.com</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Masukkan URL Website</h4>
+                            <p>Paste URL website ini ke kolom input PWABuilder, lalu klik <b>"Start"</b></p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Pilih Platform "Android"</h4>
+                            <p>Klik <b>"Package for stores"</b> → pilih <b>"Android"</b> → <b>"Generate"</b></p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h4>Download & Install APK</h4>
+                            <p>Download file .apk yang dihasilkan, lalu install di HP</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="download-section">
+                    <a href="https://www.pwabuilder.com/" target="_blank" class="btn-download" id="pwaBuilderBtn">
+                        <span class="dl-icon">🔧</span>
+                        Buka PWABuilder
+                    </a>
+                    <br>
+                    <button class="btn-secondary" onclick="copyUrl()">
+                        📋 Copy URL Website
+                    </button>
+                </div>
+            </div>
+
+            <!-- Method 2: Direct Install (PWA) -->
+            <div class="method-content" id="method-direct">
+                <p style="font-size: 13px; color: #bbb; margin-bottom: 16px;">
+                    Install langsung dari browser sebagai aplikasi (seperti APK, tergantung browser).
+                </p>
+
+                <div class="download-section">
+                    <button class="btn-download" id="directInstallBtn" onclick="directInstall()">
+                        <span class="dl-icon">📲</span>
+                        Install Sekarang
+                    </button>
+                </div>
+
+                <div id="directInstallGuide" style="display: none; margin-top: 16px;">
+                    <!-- Filled by JS based on browser -->
+                </div>
+
+                <div class="features">
+                    <div class="feature-item"><span class="check">✓</span> Ikon di Home Screen</div>
+                    <div class="feature-item"><span class="check">✓</span> Layar penuh (no URL bar)</div>
+                    <div class="feature-item"><span class="check">✓</span> Akses offline</div>
+                    <div class="feature-item"><span class="check">✓</span> Voice input</div>
+                    <div class="feature-item"><span class="check">✓</span> Auto-update</div>
+                    <div class="feature-item"><span class="check">✓</span> Ringan (~1MB)</div>
+                </div>
+            </div>
+
+            <!-- Method 3: Bubblewrap -->
+            <div class="method-content" id="method-bubblewrap">
+                <p style="font-size: 13px; color: #bbb; margin-bottom: 16px;">
+                    Untuk developer yang ingin generate APK sendiri via command line.
+                </p>
+
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Install Node.js & JDK</h4>
+                            <p>Pastikan Node.js v14+ dan JDK 11+ sudah terinstall</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Install Bubblewrap CLI</h4>
+                            <p><code
+                                    style="background: rgba(255,255,255,0.08); padding: 2px 8px; border-radius: 4px;">npm i -g @nicolo-ribaudo/bubblewrap</code>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Generate Project</h4>
+                            <p><code
+                                    style="background: rgba(255,255,255,0.08); padding: 2px 8px; border-radius: 4px;">bubblewrap init --manifest [URL]/manifest.json</code>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h4>Build APK</h4>
+                            <p><code
+                                    style="background: rgba(255,255,255,0.08); padding: 2px 8px; border-radius: 4px;">bubblewrap build</code>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert">
+                    <strong>⚠️ Catatan:</strong>
+                    Metode ini membutuhkan laptop/PC dengan Node.js, JDK, dan Android SDK terinstall.
+                    Gunakan metode PWABuilder jika tidak familiar dengan command line.
+                </div>
+            </div>
+        </div>
+
+        <!-- App Info -->
+        <div class="card">
+            <div class="card-title">
+                <span class="icon">📋</span>
+                Info Aplikasi
+            </div>
+            <div class="device-info">
+                <div class="device-info-row">
+                    <span class="device-info-label">Nama</span>
+                    <span class="device-info-value" id="appName">Laporan KR</span>
+                </div>
+                <div class="device-info-row">
+                    <span class="device-info-label">Versi</span>
+                    <span class="device-info-value" id="appVersion">2.1</span>
+                </div>
+                <div class="device-info-row">
+                    <span class="device-info-label">Ukuran</span>
+                    <span class="device-info-value">~1 MB</span>
+                </div>
+                <div class="device-info-row">
+                    <span class="device-info-label">URL</span>
+                    <span class="device-info-value" id="appUrl" style="font-size: 11px; word-break: break-all;"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-note">
+            Laporan Kunjungan Rumah - Puskesmas Balas Klumprik<br>
+            © 2026 • PWA v2.1
+        </div>
+    </div>
+
+    <!-- Loading overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Menyiapkan install...</div>
+    </div>
+
+    <script>
+        // ===== Browser Detection (same as index.html) =====
+        function detectBrowser() {
+            const ua = navigator.userAgent;
+            if (/HeyTapBrowser/i.test(ua) && /RMX|Realme/i.test(ua)) return 'realme';
+            if (/HeyTapBrowser|OppoBrowser/i.test(ua)) return 'oppo';
+            if (/MiuiBrowser|XiaoMi/i.test(ua)) return 'xiaomi';
+            if (/VivoBrowser/i.test(ua)) return 'vivo';
+            if (/HuaweiBrowser/i.test(ua)) return 'huawei';
+            if (/SamsungBrowser/i.test(ua)) return 'samsung';
+            if (/UCBrowser|UCWEB/i.test(ua)) return 'ucbrowser';
+            if (/OPR|Opera/i.test(ua)) return 'opera';
+            if (/Firefox|FxiOS/i.test(ua)) return 'firefox';
+            if (/Edg/i.test(ua)) return 'edge';
+            if (/CriOS/i.test(ua)) return 'chrome_ios';
+            if (/Safari/i.test(ua) && /iPhone|iPad|iPod/i.test(ua) && !/Chrome/i.test(ua)) return 'safari_ios';
+            if (/Chrome/i.test(ua)) return 'chrome';
+            if (/Safari/i.test(ua)) return 'safari';
+            return 'other';
+        }
+
+        function getBrowserName(browser) {
+            const names = {
+                realme: 'Realme Browser',
+                oppo: 'OPPO Browser',
+                xiaomi: 'Xiaomi/Redmi Browser',
+                vivo: 'Vivo Browser',
+                huawei: 'Huawei Browser',
+                samsung: 'Samsung Internet',
+                ucbrowser: 'UC Browser',
+                opera: 'Opera',
+                firefox: 'Firefox',
+                edge: 'Microsoft Edge',
+                chrome_ios: 'Chrome (iOS)',
+                safari_ios: 'Safari (iOS)',
+                chrome: 'Google Chrome',
+                safari: 'Safari',
+                other: 'Browser Lainnya'
+            };
+            return names[browser] || 'Browser';
+        }
+
+        function detectPlatform() {
+            const ua = navigator.userAgent;
+            if (/Android/i.test(ua)) {
+                // Try to get device model
+                const match = ua.match(/;\s*([^;)]+)\s*Build\//);
+                return match ? `Android (${match[1].trim()})` : 'Android';
+            }
+            if (/iPhone/i.test(ua)) return 'iPhone (iOS)';
+            if (/iPad/i.test(ua)) return 'iPad (iPadOS)';
+            if (/Windows/i.test(ua)) return 'Windows';
+            if (/Mac/i.test(ua)) return 'macOS';
+            if (/Linux/i.test(ua)) return 'Linux';
+            return 'Unknown';
+        }
+
+        // ===== Method switching =====
+        function switchMethod(method) {
+            document.querySelectorAll('.method-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.method-content').forEach(c => c.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            document.getElementById(`method-${method}`).classList.add('active');
+        }
+
+        // ===== Copy URL =====
+        function copyUrl() {
+            const url = window.location.origin + window.location.pathname.replace('generate-apk.html', 'index.html');
+            navigator.clipboard.writeText(url).then(() => {
+                const btn = event.currentTarget;
+                const orig = btn.innerHTML;
+                btn.innerHTML = '✅ URL Tersalin!';
+                setTimeout(() => btn.innerHTML = orig, 2000);
+            }).catch(() => {
+                prompt('Copy URL ini:', url);
+            });
+        }
+
+        // ===== Direct Install (PWA) =====
+        let deferredPrompt = null;
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            console.log('✅ Install prompt captured on APK page');
+        });
+
+        function directInstall() {
+            if (deferredPrompt) {
+                const overlay = document.getElementById('loadingOverlay');
+                overlay.classList.add('active');
+
+                setTimeout(async () => {
+                    overlay.classList.remove('active');
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    console.log('Install outcome:', outcome);
+                    if (outcome === 'accepted') {
+                        alert('🎉 Aplikasi berhasil diinstall! Cek home screen Anda.');
+                    }
+                    deferredPrompt = null;
+                }, 800);
+            } else {
+                // Show manual guide
+                showManualGuide();
+            }
+        }
+
+        function showManualGuide() {
+            const guideDiv = document.getElementById('directInstallGuide');
+            const browser = detectBrowser();
+
+            const guides = {
+                realme: {
+                    title: '📱 Realme Browser',
+                    steps: [
+                        'Tap ikon <b>⋮</b> (titik tiga) di pojok kanan atas',
+                        'Pilih <b>"Tambahkan ke Layar awal"</b>',
+                        'Tap <b>"Tambahkan"</b> untuk konfirmasi'
+                    ]
+                },
+                oppo: {
+                    title: '📱 OPPO Browser',
+                    steps: [
+                        'Tap ikon <b>⋮</b> di pojok kanan bawah',
+                        'Pilih <b>"Tambahkan ke Layar utama"</b>',
+                        'Tap <b>"Tambah"</b> untuk konfirmasi'
+                    ]
+                },
+                xiaomi: {
+                    title: '📱 Xiaomi / Redmi Browser',
+                    steps: [
+                        'Tap ikon <b>☰</b> di pojok kanan bawah',
+                        'Pilih <b>"Tambahkan ke Layar utama"</b>',
+                        'Tap <b>"Tambahkan"</b>'
+                    ]
+                },
+                samsung: {
+                    title: '📱 Samsung Internet',
+                    steps: [
+                        'Tap ikon <b>☰</b> di pojok kanan bawah',
+                        'Pilih <b>"Tambahkan halaman ke"</b> → <b>"Layar utama"</b>',
+                        'Tap <b>"Tambahkan"</b>'
+                    ]
+                },
+                chrome: {
+                    title: '🌐 Google Chrome',
+                    steps: [
+                        'Tap ikon <b>⋮</b> di pojok kanan atas',
+                        'Pilih <b>"Tambahkan ke layar utama"</b>',
+                        'Tap <b>"Tambahkan"</b>'
+                    ]
+                },
+                safari_ios: {
+                    title: '🍎 Safari (iPhone/iPad)',
+                    steps: [
+                        'Tap ikon <b>⬆️ Share</b> di pojok bawah',
+                        'Pilih <b>"Tambah ke Layar Utama"</b>',
+                        'Tap <b>"Tambah"</b>'
+                    ]
+                }
+            };
+
+            const guide = guides[browser] || {
+                title: '📱 Browser Anda',
+                steps: [
+                    'Buka menu browser (⋮ atau ☰)',
+                    'Pilih <b>"Tambahkan ke Layar utama"</b>',
+                    'Konfirmasi install'
+                ]
+            };
+
+            let html = `<div class="card" style="margin:0; background: rgba(124,77,255,0.08); border-color: rgba(124,77,255,0.25);">`;
+            html += `<div class="card-title" style="font-size:15px;">${guide.title}</div>`;
+            html += `<div class="steps">`;
+            guide.steps.forEach((step, i) => {
+                html += `<div class="step">
+                    <div class="step-number">${i + 1}</div>
+                    <div class="step-content"><p>${step}</p></div>
+                </div>`;
+            });
+            html += `</div></div>`;
+
+            guideDiv.innerHTML = html;
+            guideDiv.style.display = 'block';
+        }
+
+        // ===== Initialize =====
+        document.addEventListener('DOMContentLoaded', () => {
+            const browser = detectBrowser();
+            document.getElementById('detectedBrowser').textContent = getBrowserName(browser);
+            document.getElementById('detectedPlatform').textContent = detectPlatform();
+            document.getElementById('appUrl').textContent = window.location.origin + window.location.pathname.replace('generate-apk.html', '');
+
+            // Check PWA readiness
+            // Service Worker
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistration().then(reg => {
+                    if (reg) {
+                        document.getElementById('swIcon').textContent = '✅';
+                        document.getElementById('swStatus').textContent = 'Active';
+                        document.getElementById('swStatus').className = 'status-value status-ok';
+                    } else {
+                        document.getElementById('swIcon').textContent = '❌';
+                        document.getElementById('swStatus').textContent = 'Not Found';
+                        document.getElementById('swStatus').className = 'status-value status-warn';
+                    }
+                });
+            }
+
+            // Manifest
+            const manifestLink = document.querySelector('link[rel="manifest"]');
+            if (manifestLink) {
+                fetch(manifestLink.href).then(r => r.json()).then(data => {
+                    document.getElementById('manifestIcon').textContent = '✅';
+                    document.getElementById('manifestStatus').textContent = 'Valid';
+                    document.getElementById('manifestStatus').className = 'status-value status-ok';
+                    if (data.name) document.getElementById('appName').textContent = data.short_name || data.name;
+                    if (data.version) document.getElementById('appVersion').textContent = data.version;
+                }).catch(() => {
+                    document.getElementById('manifestIcon').textContent = '❌';
+                    document.getElementById('manifestStatus').textContent = 'Error';
+                    document.getElementById('manifestStatus').className = 'status-value status-warn';
+                });
+            }
+
+            // HTTPS
+            const isSecure = location.protocol === 'https:' || location.hostname === 'localhost';
+            document.getElementById('httpsIcon').textContent = isSecure ? '✅' : '⚠️';
+            document.getElementById('httpsStatus').textContent = isSecure ? 'Secure' : 'HTTP Only';
+            document.getElementById('httpsStatus').className = `status-value ${isSecure ? 'status-ok' : 'status-warn'}`;
+
+            // Offline
+            if ('caches' in window) {
+                caches.has('laporan-kr-v11').then(has => {
+                    document.getElementById('offlineIcon').textContent = has ? '✅' : '⏳';
+                    document.getElementById('offlineStatus').textContent = has ? 'Cached' : 'Loading...';
+                    document.getElementById('offlineStatus').className = `status-value ${has ? 'status-ok' : 'status-warn'}`;
+                });
+            }
+
+            // PWA overall status
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+            const pwaStatusEl = document.getElementById('pwaStatus');
+            if (isStandalone) {
+                pwaStatusEl.textContent = '✅ Sudah Terinstall!';
+                pwaStatusEl.style.color = '#4caf50';
+            } else {
+                pwaStatusEl.textContent = '📲 Siap Install';
+                pwaStatusEl.style.color = '#ffc107';
+            }
+
+            // Register SW from this page too
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('./sw.js');
+            }
+        });
+    </script>
+</body>
+
+</html>

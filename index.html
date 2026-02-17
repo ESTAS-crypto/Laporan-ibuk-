@@ -53,6 +53,9 @@
                 <!-- Content filled by JS based on browser -->
             </div>
             <div class="install-guide-footer">
+                <a href="generate-apk.html" class="install-guide-dismiss"
+                    style="background: linear-gradient(135deg, #7c4dff, #536dfe); color: white; text-decoration: none; text-align: center;">📦
+                    Download APK</a>
                 <button class="install-guide-dismiss" onclick="closeInstallGuide()">Nanti Saja</button>
             </div>
         </div>
@@ -481,10 +484,11 @@
             // PENTING: Deteksi browser vendor-spesifik HARUS sebelum Chrome
             // karena hampir semua browser bawaan Android mengandung "Chrome" di user-agent
 
-            // Browser bawaan vendor HP
-            if (/RealmeBrowser/i.test(ua)) return 'realme';
-            if (/MiuiBrowser|XiaoMi/i.test(ua)) return 'xiaomi';
+            // Realme pakai HeyTapBrowser (milik OPPO) tapi model HP-nya RMX/Realme
+            // Jadi cek model HP DAN browser bersamaan
+            if (/HeyTapBrowser/i.test(ua) && /RMX|Realme/i.test(ua)) return 'realme';
             if (/HeyTapBrowser|OppoBrowser/i.test(ua)) return 'oppo';
+            if (/MiuiBrowser|XiaoMi/i.test(ua)) return 'xiaomi';
             if (/VivoBrowser/i.test(ua)) return 'vivo';
             if (/HuaweiBrowser/i.test(ua)) return 'huawei';
             if (/SamsungBrowser/i.test(ua)) return 'samsung';
@@ -496,7 +500,7 @@
             if (/Edg/i.test(ua)) return 'edge';
 
             // Safari iOS (sebelum Chrome karena iOS Chrome juga punya Safari di UA)
-            if (/CriOS/i.test(ua)) return 'chrome_ios'; // Chrome di iOS
+            if (/CriOS/i.test(ua)) return 'chrome_ios';
             if (/Safari/i.test(ua) && /iPhone|iPad|iPod/i.test(ua) && !/Chrome/i.test(ua)) return 'safari_ios';
 
             // Chrome (fallback terakhir untuk Chromium-based)
