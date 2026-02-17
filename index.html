@@ -14,9 +14,30 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <link rel="stylesheet" href="style.css" />
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json" />
+    <meta name="theme-color" content="#5c6bc0" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Laporan KR" />
+    <link rel="apple-touch-icon" href="icons/icon-192.svg" />
+    <meta name="description" content="Generator Laporan Kunjungan Rumah untuk Kader Puskesmas Balas Klumprik" />
 </head>
 
 <body>
+    <!-- PWA Install Banner -->
+    <div id="installBanner" class="install-banner" style="display: none;">
+        <div class="install-banner-content">
+            <div class="install-banner-icon">📲</div>
+            <div class="install-banner-text">
+                <strong>Install Aplikasi</strong>
+                <span>Pasang di HP untuk akses cepat & offline</span>
+            </div>
+            <button id="installBtn" class="install-banner-btn">Install</button>
+            <button id="installDismiss" class="install-banner-close">&times;</button>
+        </div>
+    </div>
     <!-- Login Panel -->
     <div id="loginPanel" class="login-panel">
         <div class="login-content">
@@ -35,8 +56,9 @@
         <div class="user-info-content">
             <span class="user-label">👤 Login sebagai: <strong id="usernameDisplay"></strong></span>
             <div class="user-actions">
-                <button type="button" id="saveBtn" class="btn-save">💾 Simpan</button>
-                <button type="button" id="logoutBtn" class="btn-logout">Keluar</button>
+                <button id="btnSettings" class="btn-logout" title="Settings">⚙️</button>
+                <button id="btnSaveData" class="btn-save">Simpan Data</button>
+                <button id="btnLogout" class="btn-logout">Logout</button>
             </div>
         </div>
     </div>
@@ -396,9 +418,42 @@
     </script>
 
     <!-- Load Scripts -->
+    <!-- AI Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>⚙️ Pengaturan Suara AI</h2>
+            <div class="modal-body">
+                <p>Nyalakan <b>Hybrid AI Correction</b> untuk hasil teks yang jauh lebih akurat (memperbaiki tata bahasa
+                    & istilah medis otomatis).</p>
+
+                <div class="form-group">
+                    <label for="aiToggle">Status:</label>
+                    <label class="switch">
+                        <input type="checkbox" id="aiToggle">
+                        <span class="slider round"></span>
+                    </label>
+                    <span id="aiStatusText">Non-aktif</span>
+                </div>
+
+                <div class="form-group" id="apiKeyGroup" style="display:none">
+                    <label for="groqKey">Groq API Key (Gratis):</label>
+                    <input type="password" id="groqKey" placeholder="gsk_..." autocomplete="off">
+                    <p class="input-help">Dapatkan key gratis di <a href="https://console.groq.com/keys"
+                            target="_blank">console.groq.com</a></p>
+                </div>
+
+                <div class="form-group">
+                    <button id="saveSettings" class="btn-primary">Simpan Pengaturan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
     <script src="stylepdf.js"></script>
     <script src="auth.js"></script>
+    <script src="voice.js?v=9.5"></script>
 
     <script>
         // Initialize auth system after all scripts loaded
@@ -407,6 +462,54 @@
             if (typeof AuthSystem !== 'undefined') {
                 AuthSystem.init();
             }
+
+            // ===== PWA: Register Service Worker =====
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('✅ Service Worker registered', reg.scope))
+                    .catch(err => console.warn('SW registration failed:', err));
+            }
+
+            // ===== PWA: Install Prompt =====
+            let deferredPrompt;
+            const installBanner = document.getElementById('installBanner');
+            const installBtn = document.getElementById('installBtn');
+            const installDismiss = document.getElementById('installDismiss');
+
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                // Show install banner
+                if (installBanner && !localStorage.getItem('pwa_install_dismissed')) {
+                    installBanner.style.display = 'block';
+                    setTimeout(() => installBanner.classList.add('show'), 100);
+                }
+            });
+
+            if (installBtn) {
+                installBtn.addEventListener('click', async () => {
+                    if (deferredPrompt) {
+                        deferredPrompt.prompt();
+                        const { outcome } = await deferredPrompt.userChoice;
+                        console.log('Install outcome:', outcome);
+                        deferredPrompt = null;
+                        installBanner.style.display = 'none';
+                    }
+                });
+            }
+
+            if (installDismiss) {
+                installDismiss.addEventListener('click', () => {
+                    installBanner.classList.remove('show');
+                    setTimeout(() => installBanner.style.display = 'none', 300);
+                    localStorage.setItem('pwa_install_dismissed', 'true');
+                });
+            }
+
+            window.addEventListener('appinstalled', () => {
+                console.log('✅ App installed!');
+                installBanner.style.display = 'none';
+            });
 
             // Login button
             const loginBtn = document.getElementById('loginBtn');

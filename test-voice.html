@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Diagnostic v3</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            max-width: 700px;
+            margin: 20px auto;
+            padding: 15px;
+            background: #0d1117;
+            color: #e6edf3;
+        }
+
+        h1 {
+            color: #58a6ff;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+
+        h3 {
+            color: #8b949e;
+            margin-bottom: 8px;
+            font-size: 1em;
+        }
+
+        .section {
+            background: #161b22;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            border: 1px solid #30363d;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            margin: 4px;
+            font-weight: 600;
+        }
+
+        .btn-green {
+            background: #238636;
+        }
+
+        .btn-blue {
+            background: #1f6feb;
+        }
+
+        .btn-red {
+            background: #da3633;
+        }
+
+        .btn-orange {
+            background: #d29922;
+        }
+
+        .btn-purple {
+            background: #8957e5;
+        }
+
+        .btn:hover {
+            opacity: 0.85;
+        }
+
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        #output {
+            font-size: 20px;
+            color: #7ee787;
+            margin: 10px 0;
+            min-height: 36px;
+            padding: 12px;
+            border: 2px solid #238636;
+            border-radius: 8px;
+            background: #0d1117;
+        }
+
+        #log {
+            white-space: pre-wrap;
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 11px;
+            background: #0d1117;
+            padding: 10px;
+            border-radius: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            color: #8b949e;
+            line-height: 1.5;
+        }
+
+        .ok {
+            color: #7ee787;
+        }
+
+        .error {
+            color: #f85149;
+        }
+
+        .result {
+            color: #58a6ff;
+            font-weight: bold;
+        }
+
+        .warn {
+            color: #d29922;
+        }
+
+        .info {
+            color: #8b949e;
+        }
+
+        .meter-bar {
+            width: 100%;
+            height: 20px;
+            background: #21262d;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 8px 0;
+        }
+
+        .meter-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #238636, #7ee787, #f0e68c, #da3633);
+            border-radius: 10px;
+            transition: width 0.05s;
+        }
+
+        .status {
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            display: inline-block;
+            margin: 5px 0;
+        }
+
+        .status-ok {
+            background: #23863620;
+            color: #7ee787;
+            border: 1px solid #238636;
+        }
+
+        .status-fail {
+            background: #da363320;
+            color: #f85149;
+            border: 1px solid #da3633;
+        }
+
+        .status-warn {
+            background: #d2992220;
+            color: #d29922;
+            border: 1px solid #d29922;
+        }
+
+        .fix-list {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .fix-list li {
+            margin: 6px 0;
+            line-height: 1.5;
+        }
+
+        code {
+            background: #30363d;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #d29922;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🔍 Voice Diagnostic v3</h1>
+
+    <!-- Mic Test -->
+    <div class="section">
+        <h3>Step 1: Test Mikrofon</h3>
+        <button class="btn btn-orange" id="btnMicTest" onclick="testMicLevel()">🎤 Test Mic Level</button>
+        <button class="btn btn-red" id="btnMicStop" onclick="stopMicTest()" disabled>⏹ Stop</button>
+        <div class="meter-bar">
+            <div class="meter-fill" id="micMeter"></div>
+        </div>
+        <div id="micStatus"></div>
+    </div>
+
+    <!-- Network Test -->
+    <div class="section">
+        <h3>Step 2: Test Koneksi Google</h3>
+        <button class="btn btn-blue" onclick="testNetwork()">🌐 Test</button>
+        <div id="netStatus"></div>
+    </div>
+
+    <!-- Speech Recognition -->
+    <div class="section">
+        <h3>Step 3: Test Speech (Normal)</h3>
+        <button class="btn btn-green" onclick="startSpeech('id-ID', false)">🇮🇩 Indonesian</button>
+        <button class="btn btn-blue" onclick="startSpeech('en-US', false)">🇺🇸 English</button>
+        <button class="btn btn-red" onclick="stopSpeech()">⏹ Stop</button>
+    </div>
+
+    <!-- WORKAROUND: Keep mic stream alive -->
+    <div class="section" style="border-color: #8957e5;">
+        <h3>🔧 Step 4: Test Speech + Keep Mic Active (WORKAROUND)</h3>
+        <p style="font-size:12px;color:#8b949e;margin-bottom:8px">Ini menjaga mic stream tetap aktif saat speech
+            recognition jalan — workaround untuk bug Chrome.</p>
+        <button class="btn btn-purple" onclick="startSpeech('id-ID', true)">🇮🇩 Indonesian + Mic Active</button>
+        <button class="btn btn-purple" onclick="startSpeech('en-US', true)">🇺🇸 English + Mic Active</button>
+        <button class="btn btn-red" onclick="stopSpeech()">⏹ Stop</button>
+    </div>
+
+    <!-- Output -->
+    <div class="section">
+        <h3>Hasil:</h3>
+        <div id="output">Belum dimulai...</div>
+    </div>
+
+    <!-- Log -->
+    <div class="section">
+        <h3>Log <button class="btn" style="font-size:11px;padding:4px 8px;background:#30363d"
+                onclick="document.getElementById('log').innerHTML=''">Clear</button></h3>
+        <div id="log"></div>
+    </div>
+
+    <!-- Fixes -->
+    <div class="section" id="fixSection" style="display:none">
+        <h3>🔧 Solusi:</h3>
+        <ol class="fix-list" id="fixList"></ol>
+    </div>
+
+    <!-- System Info -->
+    <div class="section" id="sysinfo"></div>
+
+    <script>
+        // ─── Mic Level Test ───
+        var micStream = null;
+        var micCtx = null;
+        var micAnalyser = null;
+        var micAnimFrame = null;
+
+        async function testMicLevel() {
+            log('🎤 Testing mic level...');
+            try {
+                micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                micCtx = new AudioContext();
+                var source = micCtx.createMediaStreamSource(micStream);
+                micAnalyser = micCtx.createAnalyser();
+                micAnalyser.fftSize = 512;
+                source.connect(micAnalyser);
+
+                var label = micStream.getAudioTracks()[0].label;
+                log('✅ Mic: ' + label, 'ok');
+                document.getElementById('btnMicTest').disabled = true;
+                document.getElementById('btnMicStop').disabled = false;
+
+                var dataArray = new Uint8Array(micAnalyser.frequencyBinCount);
+                var maxLevel = 0;
+
+                function updateMeter() {
+                    micAnalyser.getByteFrequencyData(dataArray);
+                    var sum = 0;
+                    for (var i = 0; i < dataArray.length; i++) sum += dataArray[i];
+                    var avg = sum / dataArray.length;
+                    var pct = Math.min(100, (avg / 128) * 100);
+                    if (pct > maxLevel) maxLevel = pct;
+                    document.getElementById('micMeter').style.width = pct + '%';
+                    micAnimFrame = requestAnimationFrame(updateMeter);
+                }
+                updateMeter();
+
+                setTimeout(function () {
+                    if (maxLevel > 2) {
+                        document.getElementById('micStatus').innerHTML = '<div class="status status-ok">✅ Max: ' + maxLevel.toFixed(1) + '%</div>';
+                        log('✅ Mic OK — max: ' + maxLevel.toFixed(1) + '%', 'ok');
+                    } else {
+                        document.getElementById('micStatus').innerHTML = '<div class="status status-fail">❌ Tidak ada suara!</div>';
+                        log('❌ Mic SILENT!', 'error');
+                    }
+                }, 3000);
+            } catch (err) {
+                log('❌ ' + err.message, 'error');
+            }
+        }
+
+        function stopMicTest() {
+            if (micStream) { micStream.getTracks().forEach(function (t) { t.stop(); }); micStream = null; }
+            if (micCtx) { try { micCtx.close(); } catch (e) { } micCtx = null; }
+            if (micAnimFrame) cancelAnimationFrame(micAnimFrame);
+            document.getElementById('btnMicTest').disabled = false;
+            document.getElementById('btnMicStop').disabled = true;
+            document.getElementById('micMeter').style.width = '0%';
+            log('⏹ Mic stopped');
+        }
+
+        // ─── Network ───
+        async function testNetwork() {
+            var el = document.getElementById('netStatus');
+            el.innerHTML = '<div class="status status-warn">⏳...</div>';
+            var html = '';
+            try {
+                var t1 = performance.now();
+                await fetch('https://www.google.com/generate_204', { mode: 'no-cors' });
+                html += '<div class="status status-ok">✅ Google: ' + Math.round(performance.now() - t1) + 'ms</div> ';
+                log('✅ Google OK', 'ok');
+            } catch (e) {
+                html += '<div class="status status-fail">❌ Google blocked</div> ';
+                log('❌ Google blocked', 'error');
+            }
+            el.innerHTML = html;
+        }
+
+        // ─── Speech Recognition ───
+        var currentRec = null;
+        var keepAliveStream = null;
+        var speechTimeout = null;
+
+        async function startSpeech(lang, keepMicAlive) {
+            var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SR) { log('❌ Not supported', 'error'); return; }
+
+            stopSpeech();
+            stopMicTest();
+
+            // Wait for cleanup
+            await new Promise(function (r) { setTimeout(r, 300); });
+
+            document.getElementById('output').textContent = 'Mendengarkan...';
+            log('─── New Session (keepMic=' + keepMicAlive + ') ───', 'info');
+
+            // WORKAROUND: Keep mic stream alive during recognition
+            if (keepMicAlive) {
+                try {
+                    keepAliveStream = await navigator.mediaDevices.getUserMedia({
+                        audio: {
+                            channelCount: 1,
+                            sampleRate: 16000,
+                            echoCancellation: true,
+                            noiseSuppression: true,
+                            autoGainControl: true
+                        }
+                    });
+                    var label = keepAliveStream.getAudioTracks()[0].label;
+                    log('🔗 Keep-alive mic stream: ' + label, 'ok');
+
+                    // Create audio context to actually pull from mic (keeps stream busy)
+                    var ctx = new AudioContext({ sampleRate: 16000 });
+                    var src = ctx.createMediaStreamSource(keepAliveStream);
+                    var processor = ctx.createScriptProcessor(4096, 1, 1);
+                    processor.onaudioprocess = function () { }; // Keep pulling audio
+                    src.connect(processor);
+                    processor.connect(ctx.destination);
+                    log('🔗 Audio pipeline active', 'ok');
+
+                    // Wait a moment for audio pipeline to stabilize
+                    await new Promise(function (r) { setTimeout(r, 500); });
+                } catch (err) {
+                    log('❌ Keep-alive mic failed: ' + err.message, 'error');
+                }
+            }
+
+            currentRec = new SR();
+            currentRec.lang = lang;
+            currentRec.continuous = false;
+            currentRec.interimResults = true;
+            currentRec.maxAlternatives = 1;
+
+            var gotAudio = false;
+            var gotResult = false;
+
+            currentRec.onstart = function () {
+                log('🟢 onstart', 'ok');
+                speechTimeout = setTimeout(function () {
+                    if (!gotAudio) {
+                        log('⏰ TIMEOUT: onaudiostart never fired!', 'error');
+                        if (!keepMicAlive) {
+                            log('💡 Coba Step 4 (workaround dengan keep mic active)', 'warn');
+                        } else {
+                            log('⛔ Workaround juga gagal — ini bug Chrome di PC ini', 'error');
+                            showFix('<b>Restart Chrome</b> (tutup SEMUA window Chrome, buka lagi)');
+                            showFix('Clear Chrome data: <code>chrome://settings/clearBrowserData</code> → Cookies + Cached');
+                            showFix('Coba <b>Microsoft Edge</b>: download di <code>microsoft.com/edge</code>');
+                            showFix('Coba <b>chrome://flags</code> → cari "speech" → reset semua ke Default');
+                            showFix('Reset Chrome settings: <code>chrome://settings/reset</code>');
+                        }
+                    }
+                }, 4000);
+            };
+
+            currentRec.onaudiostart = function () {
+                gotAudio = true;
+                clearTimeout(speechTimeout);
+                log('🎧 onaudiostart — CAPTURING!', 'ok');
+            };
+            currentRec.onsoundstart = function () { log('🔊 onsoundstart', 'ok'); };
+            currentRec.onspeechstart = function () { log('🗣️ onspeechstart — SPEECH!', 'ok'); };
+
+            currentRec.onresult = function (e) {
+                gotResult = true;
+                var text = '';
+                var isFinal = false;
+                for (var i = 0; i < e.results.length; i++) {
+                    text += e.results[i][0].transcript;
+                    if (e.results[i].isFinal) isFinal = true;
+                }
+                var conf = (e.results[0][0].confidence * 100).toFixed(1);
+                log((isFinal ? '✅ FINAL' : '💬 interim') + ': "' + text + '" (' + conf + '%)', isFinal ? 'result' : 'ok');
+                document.getElementById('output').textContent = text;
+            };
+
+            currentRec.onerror = function (e) {
+                log('❌ ERROR: ' + e.error, 'error');
+                clearTimeout(speechTimeout);
+            };
+
+            currentRec.onspeechend = function () { log('🗣️ onspeechend'); };
+            currentRec.onsoundend = function () { log('🔊 onsoundend'); };
+            currentRec.onaudioend = function () { log('🎧 onaudioend'); };
+            currentRec.onend = function () {
+                log('🔴 onend | audio=' + gotAudio + ' result=' + gotResult, 'warn');
+                clearTimeout(speechTimeout);
+                if (!gotAudio) {
+                    document.getElementById('output').textContent = '❌ Gagal — tidak ada audio capture';
+                } else if (!gotResult) {
+                    document.getElementById('output').textContent = '⚠️ Audio OK tapi tidak ada ucapan';
+                }
+                // Release keep-alive stream
+                if (keepAliveStream) {
+                    keepAliveStream.getTracks().forEach(function (t) { t.stop(); });
+                    keepAliveStream = null;
+                }
+            };
+
+            try {
+                currentRec.start();
+                log('▶️ start() — bicara sekarang!', 'ok');
+            } catch (e) {
+                log('💥 ' + e.message, 'error');
+                clearTimeout(speechTimeout);
+            }
+        }
+
+        function stopSpeech() {
+            clearTimeout(speechTimeout);
+            if (currentRec) { try { currentRec.abort(); } catch (e) { } currentRec = null; }
+            if (keepAliveStream) { keepAliveStream.getTracks().forEach(function (t) { t.stop(); }); keepAliveStream = null; }
+            log('⏹ Stopped');
+        }
+
+        // ─── Utils ───
+        function log(msg, cls) {
+            var el = document.getElementById('log');
+            var t = new Date().toTimeString().split(' ')[0];
+            el.innerHTML += '<span class="' + (cls || 'info') + '">' + t + ' ' + msg + '</span>\n';
+            el.scrollTop = el.scrollHeight;
+            console.log('[VD]', msg);
+        }
+
+        function showFix(text) {
+            document.getElementById('fixSection').style.display = 'block';
+            var list = document.getElementById('fixList');
+            var items = list.getElementsByTagName('li');
+            for (var i = 0; i < items.length; i++) if (items[i].innerHTML === text) return;
+            var li = document.createElement('li');
+            li.innerHTML = text;
+            list.appendChild(li);
+        }
+
+        // System info
+        var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        var br = navigator.userAgent.match(/Chrome\/[\d.]+|Edg\/[\d.]+|Firefox\/[\d.]+/);
+        document.getElementById('sysinfo').innerHTML = '<h3>🖥️ System</h3>' +
+            '<p>Browser: <code>' + (br ? br[0] : '?') + '</code> | Speech: <code>' + (SR ? 'YES' : 'NO') + '</code> | Secure: <code>' + window.isSecureContext + '</code> | Online: <code>' + navigator.onLine + '</code></p>';
+
+        testNetwork();
+    </script>
+</body>
+
+</html>

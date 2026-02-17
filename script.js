@@ -1134,6 +1134,11 @@ function addEventListeners(laporanIndex) {
             element.addEventListener("change", updatePreview);
         }
     });
+
+    // Init voice input buttons for this laporan
+    if (typeof VoiceInput !== 'undefined') {
+        VoiceInput.initForLaporan(laporanIndex);
+    }
 }
 
 document.getElementById("jumlahLaporan").addEventListener("change", function (e) {
@@ -1675,14 +1680,20 @@ document.getElementById("laporanForm").addEventListener("submit", async function
 
         saveAs(blob, fileName);
 
+        // Store for sharing
+        window._lastGeneratedFile = { blob, fileName };
+
         setTimeout(() => {
             progressContainer.style.display = "none";
             success.style.display = "block";
             success.classList.add("fade-in");
 
+            // Show share button
+            showShareButton(blob, fileName);
+
             setTimeout(() => {
                 success.style.display = "none";
-            }, 3000);
+            }, 5000);
         }, 500);
     } catch (error) {
         console.error("Error generating document:", error);
@@ -1700,6 +1711,60 @@ document.getElementById("laporanForm").addEventListener("submit", async function
         generateBtn.disabled = false;
     }
 });
+// ===== WHATSAPP SHARE =====
+function showShareButton(blob, fileName) {
+    // Remove existing share container if any
+    const existing = document.getElementById('shareContainer');
+    if (existing) existing.remove();
+
+    const container = document.createElement('div');
+    container.id = 'shareContainer';
+    container.className = 'share-container';
+    container.innerHTML = `
+        <button class="btn-share-wa" id="shareWaBtn">
+            <span class="share-wa-icon">📤</span>
+            <span>Kirim via WhatsApp</span>
+        </button>
+    `;
+
+    // Insert after the generate button area
+    const formActions = document.querySelector('.form-actions') ||
+        document.getElementById('generateBtn')?.parentElement;
+    if (formActions) {
+        formActions.parentNode.insertBefore(container, formActions.nextSibling);
+        setTimeout(() => container.classList.add('show'), 50);
+    }
+
+    document.getElementById('shareWaBtn').addEventListener('click', async () => {
+        // Try Web Share API (works on mobile with actual file sharing)
+        if (navigator.share && navigator.canShare) {
+            const file = new File([blob], fileName, {
+                type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            });
+
+            const shareData = { files: [file] };
+
+            if (navigator.canShare(shareData)) {
+                try {
+                    await navigator.share({
+                        title: 'Laporan Kunjungan Rumah',
+                        text: `Laporan Kunjungan Rumah - ${fileName}`,
+                        files: [file]
+                    });
+                    return;
+                } catch (err) {
+                    if (err.name === 'AbortError') return; // User cancelled
+                    console.warn('Web Share failed, using WhatsApp fallback:', err);
+                }
+            }
+        }
+
+        // Fallback: Open WhatsApp with a message
+        const message = `📋 Laporan Kunjungan Rumah\n📄 File: ${fileName}\n\n✅ Dokumen telah digenerate. Silakan cek file yang baru di-download.`;
+        const waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+        window.open(waUrl, '_blank');
+    });
+}
 
 // ===== INITIALIZATION =====
 
