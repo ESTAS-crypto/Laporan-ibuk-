@@ -478,17 +478,81 @@
         // ===== Manual Install Guide Functions =====
         function detectBrowser() {
             const ua = navigator.userAgent;
+            // PENTING: Deteksi browser vendor-spesifik HARUS sebelum Chrome
+            // karena hampir semua browser bawaan Android mengandung "Chrome" di user-agent
+
+            // Browser bawaan vendor HP
+            if (/RealmeBrowser/i.test(ua)) return 'realme';
+            if (/MiuiBrowser|XiaoMi/i.test(ua)) return 'xiaomi';
+            if (/HeyTapBrowser|OppoBrowser/i.test(ua)) return 'oppo';
+            if (/VivoBrowser/i.test(ua)) return 'vivo';
+            if (/HuaweiBrowser/i.test(ua)) return 'huawei';
             if (/SamsungBrowser/i.test(ua)) return 'samsung';
+            if (/UCBrowser|UCWEB/i.test(ua)) return 'ucbrowser';
+
+            // Browser umum
             if (/OPR|Opera/i.test(ua)) return 'opera';
-            if (/Firefox/i.test(ua)) return 'firefox';
+            if (/Firefox|FxiOS/i.test(ua)) return 'firefox';
             if (/Edg/i.test(ua)) return 'edge';
+
+            // Safari iOS (sebelum Chrome karena iOS Chrome juga punya Safari di UA)
+            if (/CriOS/i.test(ua)) return 'chrome_ios'; // Chrome di iOS
+            if (/Safari/i.test(ua) && /iPhone|iPad|iPod/i.test(ua) && !/Chrome/i.test(ua)) return 'safari_ios';
+
+            // Chrome (fallback terakhir untuk Chromium-based)
             if (/Chrome/i.test(ua)) return 'chrome';
             if (/Safari/i.test(ua)) return 'safari';
+
             return 'other';
         }
 
         function getInstallGuideHTML(browser) {
             const guides = {
+                realme: {
+                    title: '📱 Realme Browser',
+                    steps: [
+                        'Tap ikon <b>⋮</b> (titik tiga) di pojok kanan atas',
+                        'Pilih <b>"Tambahkan ke Layar awal"</b> atau <b>"Add to Home screen"</b>',
+                        'Tap <b>"Tambahkan"</b> untuk konfirmasi',
+                        'Aplikasi akan muncul di home screen! 🎉'
+                    ]
+                },
+                xiaomi: {
+                    title: '📱 Xiaomi / Redmi Browser',
+                    steps: [
+                        'Tap ikon <b>☰</b> (menu) di pojok kanan bawah',
+                        'Pilih <b>"Tambahkan ke Layar utama"</b> atau <b>"Add to Home screen"</b>',
+                        'Tap <b>"Tambahkan"</b> untuk konfirmasi',
+                        'Aplikasi akan muncul di home screen! 🎉'
+                    ]
+                },
+                oppo: {
+                    title: '📱 OPPO Browser',
+                    steps: [
+                        'Tap ikon <b>⋮</b> (titik tiga) di pojok kanan bawah',
+                        'Pilih <b>"Tambahkan ke Layar utama"</b> atau <b>"Add to Home screen"</b>',
+                        'Tap <b>"Tambah"</b> untuk konfirmasi',
+                        'Aplikasi akan muncul di home screen! 🎉'
+                    ]
+                },
+                vivo: {
+                    title: '📱 Vivo Browser',
+                    steps: [
+                        'Tap ikon <b>☰</b> (menu) di pojok kanan bawah',
+                        'Pilih <b>"Tambahkan ke Layar utama"</b> atau <b>"Add to Home screen"</b>',
+                        'Tap <b>"Tambahkan"</b> untuk konfirmasi',
+                        'Aplikasi akan muncul di home screen! 🎉'
+                    ]
+                },
+                huawei: {
+                    title: '📱 Huawei Browser',
+                    steps: [
+                        'Tap ikon <b>⋮</b> (titik tiga) di pojok kanan bawah',
+                        'Pilih <b>"Tambah ke layar beranda"</b> atau <b>"Add to Home screen"</b>',
+                        'Tap <b>"Tambahkan"</b> untuk konfirmasi',
+                        'Aplikasi akan muncul di home screen! 🎉'
+                    ]
+                },
                 samsung: {
                     title: '📱 Samsung Internet',
                     steps: [
@@ -499,12 +563,40 @@
                         'Aplikasi akan muncul di home screen! 🎉'
                     ]
                 },
+                ucbrowser: {
+                    title: '🌐 UC Browser',
+                    steps: [
+                        'Tap ikon <b>☰</b> (menu) di pojok bawah tengah',
+                        'Pilih <b>"Tambahkan ke Layar utama"</b> atau <b>"Add to Home screen"</b>',
+                        'Tap <b>"Tambahkan"</b> untuk konfirmasi',
+                        'Aplikasi akan muncul di home screen! 🎉'
+                    ]
+                },
                 chrome: {
-                    title: '🌐 Chrome',
+                    title: '🌐 Google Chrome',
                     steps: [
                         'Tap ikon <b>⋮</b> (titik tiga) di pojok kanan atas',
                         'Pilih <b>"Tambahkan ke layar utama"</b> atau <b>"Add to Home screen"</b>',
                         'Tap <b>"Tambahkan"</b> untuk konfirmasi',
+                        'Aplikasi akan muncul di home screen! 🎉'
+                    ]
+                },
+                chrome_ios: {
+                    title: '🌐 Chrome (iPhone)',
+                    steps: [
+                        'Tap ikon <b>⬆️ Share</b> (kotak dengan panah ke atas) di pojok bawah',
+                        'Scroll ke bawah dan pilih <b>"Add to Home Screen"</b> atau <b>"Tambah ke Layar Utama"</b>',
+                        'Tap <b>"Add"</b> untuk konfirmasi',
+                        'Aplikasi akan muncul di home screen! 🎉'
+                    ],
+                    note: '⚠️ Di iPhone, disarankan pakai <b>Safari</b> untuk pengalaman PWA terbaik.'
+                },
+                safari_ios: {
+                    title: '🍎 Safari (iPhone/iPad)',
+                    steps: [
+                        'Tap ikon <b>⬆️ Share</b> (kotak dengan panah ke atas) di pojok bawah tengah',
+                        'Scroll ke bawah dan pilih <b>"Tambah ke Layar Utama"</b> atau <b>"Add to Home Screen"</b>',
+                        'Tap <b>"Tambah"</b> / <b>"Add"</b> di pojok kanan atas',
                         'Aplikasi akan muncul di home screen! 🎉'
                     ]
                 },
@@ -513,7 +605,8 @@
                     steps: [
                         'Tap ikon <b>⋮</b> (titik tiga) di pojok kanan bawah',
                         'Pilih <b>"Layar utama"</b> atau <b>"Home screen"</b>',
-                        'Tap <b>"Tambahkan"</b> untuk konfirmasi'
+                        'Tap <b>"Tambahkan"</b> untuk konfirmasi',
+                        'Aplikasi akan muncul di home screen! 🎉'
                     ]
                 },
                 firefox: {
@@ -521,15 +614,26 @@
                     steps: [
                         'Tap ikon <b>⋮</b> (titik tiga) di pojok kanan atas',
                         'Pilih <b>"Install"</b> atau <b>"Tambahkan ke layar utama"</b>',
-                        'Tap <b>"Tambahkan"</b> untuk konfirmasi'
+                        'Tap <b>"Tambahkan"</b> untuk konfirmasi',
+                        'Aplikasi akan muncul di home screen! 🎉'
+                    ]
+                },
+                edge: {
+                    title: '🔵 Microsoft Edge',
+                    steps: [
+                        'Tap ikon <b>⋯</b> (titik tiga) di pojok bawah tengah',
+                        'Pilih <b>"Tambahkan ke telepon"</b> atau <b>"Add to Phone"</b>',
+                        'Tap <b>"Tambahkan"</b> untuk konfirmasi',
+                        'Aplikasi akan muncul di home screen! 🎉'
                     ]
                 },
                 other: {
-                    title: '📱 Browser',
+                    title: '📱 Browser Anda',
                     steps: [
-                        'Buka menu browser (biasanya ikon ⋮ atau ☰)',
-                        'Cari opsi <b>"Tambahkan ke layar utama"</b> atau <b>"Add to Home screen"</b>',
-                        'Tap untuk konfirmasi instalasi'
+                        'Buka menu browser (biasanya ikon <b>⋮</b> atau <b>☰</b>)',
+                        'Cari opsi <b>"Tambahkan ke Layar utama"</b> atau <b>"Add to Home screen"</b>',
+                        'Tap untuk konfirmasi instalasi',
+                        'Aplikasi akan muncul di home screen! 🎉'
                     ]
                 }
             };
@@ -540,6 +644,9 @@
                 html += `<li>${step}</li>`;
             });
             html += '</ol>';
+            if (guide.note) {
+                html += `<div class="install-guide-tip">${guide.note}</div>`;
+            }
             html += '<div class="install-guide-tip">💡 <b>Tips:</b> Setelah install, buka dari home screen agar voice input bekerja optimal!</div>';
             return html;
         }
