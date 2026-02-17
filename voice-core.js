@@ -220,21 +220,31 @@ var VoiceInput = (function () {
         recognition.interimResults = true;
         recognition.maxAlternatives = 3;
 
+        // Track how many results from this session we've already finalized
+        var processedFinalCount = 0;
+
         recognition.onresult = function (event) {
             silenceCount = 0;
-            var finalParts = '';
+            var newFinalText = '';
             var interimParts = '';
 
             for (var i = 0; i < event.results.length; i++) {
                 var best = pickBestAlternative(event.results[i]);
                 if (event.results[i].isFinal) {
-                    finalParts += best + ' ';
+                    // Only process results we haven't already added
+                    if (i >= processedFinalCount) {
+                        newFinalText += best + ' ';
+                        processedFinalCount = i + 1;
+                    }
                 } else {
                     interimParts += best;
                 }
             }
 
-            allFinalText = postProcess(finalParts);
+            // Append only NEW final text
+            if (newFinalText) {
+                allFinalText += postProcess(newFinalText);
+            }
 
             if (currentTextarea) {
                 currentTextarea.value = baseText + allFinalText + interimParts;
@@ -260,6 +270,7 @@ var VoiceInput = (function () {
                 fullStop();
                 return;
             }
+            // Restart listener (new session — processedFinalCount resets via new closure)
             setTimeout(function () {
                 if (!stopped) beginListening();
             }, 300);

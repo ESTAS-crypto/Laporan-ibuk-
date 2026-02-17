@@ -247,37 +247,30 @@ var VoiceInput = (function () {
         recognition.interimResults = true;
         recognition.maxAlternatives = 3;
 
+        // Track how many results from this session we've already finalized
+        var processedFinalCount = 0;
+
         recognition.onresult = function (event) {
             silenceCount = 0; // Reset silence on any input
-            var finalParts = '';
+            var newFinalText = '';
             var interimParts = '';
 
             for (var i = 0; i < event.results.length; i++) {
                 var best = pickBestAlternative(event.results[i]);
                 if (event.results[i].isFinal) {
-                    finalParts += best + ' ';
+                    // Only process results we haven't already added
+                    if (i >= processedFinalCount) {
+                        newFinalText += best + ' ';
+                        processedFinalCount = i + 1;
+                    }
                 } else {
                     interimParts += best;
                 }
             }
 
-            // Update visible text
-            if (finalParts) {
-                var cleanPart = postProcess(finalParts);
-                allFinalText += cleanPart;
-                // Don't duplicate! allFinalText grows.
-                // Wait, SpeechRecognition with continuous:true returns ALL results from start? 
-                // NO, we must handle aggregation carefully.
-                // REBUILD from event.results implies it holds history relative to session start.
-
-                // Let's rebuild properly:
-                var fullSessionText = '';
-                for (var j = 0; j < event.results.length; j++) {
-                    if (event.results[j].isFinal) {
-                        fullSessionText += pickBestAlternative(event.results[j]) + ' ';
-                    }
-                }
-                allFinalText = postProcess(fullSessionText);
+            // Append only NEW final text
+            if (newFinalText) {
+                allFinalText += postProcess(newFinalText);
             }
 
             if (currentTextarea) {
@@ -288,7 +281,6 @@ var VoiceInput = (function () {
 
         recognition.onerror = function (event) {
             if (event.error === 'no-speech' || event.error === 'aborted') return;
-            // showMsg('⚠️ Error: ' + event.error);
             // Don't stop immediately on error, might be temporary
         };
 
@@ -303,7 +295,6 @@ var VoiceInput = (function () {
             if (useAI && silenceCount >= MAX_SILENCE_FOR_AI && allFinalText.length > 5 && !isCorrecting) {
                 console.log('[Voice] Silence detected, triggering partial AI correction...');
                 correctTextWithAI(allFinalText, currentTextarea, true);
-                // Don't stop, just let it loop back
             }
 
             if (silenceCount > MAX_SILENCE_STOP) {
@@ -312,7 +303,7 @@ var VoiceInput = (function () {
                 return;
             }
 
-            // Restart listener
+            // Restart listener (new session — processedFinalCount resets via new closure)
             setTimeout(function () {
                 if (!stopped) beginListening();
             }, 300);
