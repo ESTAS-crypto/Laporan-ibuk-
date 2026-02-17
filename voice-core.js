@@ -200,6 +200,7 @@ var VoiceInput = (function () {
         baseText = ta.value || '';
         if (baseText && !baseText.endsWith(' ')) baseText += ' ';
         allFinalText = '';
+        recentFinals = [];
         silenceCount = 0;
         stopped = false;
         isRecording = true;
@@ -209,6 +210,29 @@ var VoiceInput = (function () {
 
         beginListening();
         showMsg('🎙️ Bicara sekarang...' + (useAI ? ' (Hybrid Mode ON)' : ''));
+    }
+
+    // Deduplication: track recent final texts to prevent mobile repeat
+    var recentFinals = [];
+    var MAX_RECENT = 5;
+
+    function isDuplicate(text) {
+        var clean = text.trim().toLowerCase();
+        if (!clean) return true;
+        for (var i = 0; i < recentFinals.length; i++) {
+            var recent = recentFinals[i];
+            if (clean === recent) return true;
+            if (recent.indexOf(clean) !== -1) return true;
+            if (clean.indexOf(recent) !== -1 && clean.length - recent.length < 5) return true;
+        }
+        return false;
+    }
+
+    function addToRecent(text) {
+        var clean = text.trim().toLowerCase();
+        if (!clean) return;
+        recentFinals.push(clean);
+        if (recentFinals.length > MAX_RECENT) recentFinals.shift();
     }
 
     function beginListening() {
@@ -233,7 +257,13 @@ var VoiceInput = (function () {
                 if (event.results[i].isFinal) {
                     // Only process results we haven't already added
                     if (i >= processedFinalCount) {
-                        newFinalText += best + ' ';
+                        // Mobile deduplication: skip if this text was recently finalized
+                        if (!isDuplicate(best)) {
+                            newFinalText += best + ' ';
+                            addToRecent(best);
+                        } else {
+                            console.log('[Voice] Skipped duplicate:', best);
+                        }
                         processedFinalCount = i + 1;
                     }
                 } else {
