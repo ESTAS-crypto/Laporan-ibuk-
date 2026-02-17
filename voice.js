@@ -9,7 +9,8 @@ var VoiceInput = (function () {
     var baseText = '';
     var recognition = null;
     var allFinalText = '';
-    var pendingText = ''; // Text waiting for AI
+    var lockedText = '';          // Finalized text from previous sessions
+    var lastRawSessionText = '';  // Raw final text from previous session (for overlap detection)
     var stopped = false;
     var silenceCount = 0;
     var MAX_SILENCE_FOR_AI = 3; // Trigger AI after 3s silence
@@ -227,7 +228,8 @@ var VoiceInput = (function () {
         baseText = ta.value || '';
         if (baseText && !baseText.endsWith(' ')) baseText += ' ';
         allFinalText = '';
-        recentFinals = [];
+        lockedText = '';
+        lastRawSessionText = '';
         silenceCount = 0;
         stopped = false;
         isRecording = true;
@@ -239,32 +241,6 @@ var VoiceInput = (function () {
         showMsg('🎙️ Bicara sekarang...' + (useAI ? ' (Real-Time Mode)' : ''));
     }
 
-    // Deduplication: track recent final texts to prevent mobile repeat
-    var recentFinals = [];
-    var MAX_RECENT = 5;
-
-    function isDuplicate(text) {
-        var clean = text.trim().toLowerCase();
-        if (!clean) return true;
-        for (var i = 0; i < recentFinals.length; i++) {
-            var recent = recentFinals[i];
-            // Exact match
-            if (clean === recent) return true;
-            // New text is contained in the last final (partial re-emit)
-            if (recent.indexOf(clean) !== -1) return true;
-            // Last final is contained in new text (extended re-emit)
-            if (clean.indexOf(recent) !== -1 && clean.length - recent.length < 5) return true;
-        }
-        return false;
-    }
-
-    function addToRecent(text) {
-        var clean = text.trim().toLowerCase();
-        if (!clean) return;
-        recentFinals.push(clean);
-        if (recentFinals.length > MAX_RECENT) recentFinals.shift();
-    }
-
     function beginListening() {
         if (stopped || !currentTextarea) return;
 
@@ -274,37 +250,44 @@ var VoiceInput = (function () {
         recognition.interimResults = true;
         recognition.maxAlternatives = 3;
 
-        // Track how many results from this session we've already finalized
-        var processedFinalCount = 0;
+        // This session's raw final text (rebuilt from event.results each time)
+        var currentRawFinal = '';
 
         recognition.onresult = function (event) {
-            silenceCount = 0; // Reset silence on any input
-            var newFinalText = '';
-            var interimParts = '';
+            silenceCount = 0;
 
+            // Rebuild ALL finals and interims from event.results
+            var rawFinal = '';
+            var interimParts = '';
             for (var i = 0; i < event.results.length; i++) {
                 var best = pickBestAlternative(event.results[i]);
                 if (event.results[i].isFinal) {
-                    // Only process results we haven't already added
-                    if (i >= processedFinalCount) {
-                        // Mobile deduplication: skip if this text was recently finalized
-                        if (!isDuplicate(best)) {
-                            newFinalText += best + ' ';
-                            addToRecent(best);
-                        } else {
-                            console.log('[Voice] Skipped duplicate:', best);
-                        }
-                        processedFinalCount = i + 1;
-                    }
+                    rawFinal += best + ' ';
                 } else {
                     interimParts += best;
                 }
             }
 
-            // Append only NEW final text
-            if (newFinalText) {
-                allFinalText += postProcess(newFinalText);
+            currentRawFinal = rawFinal;
+
+            // Mobile overlap detection:
+            // Samsung browser restarts sessions rapidly, each re-transcribing
+            // the same audio. New session's text starts with previous session's text.
+            // Example: Session1='Dan', Session2='Dan itu ngaruh', Session3='Dan itu ngaruh ke stok'
+            // We strip the overlapping prefix to avoid duplication.
+            var contribution = rawFinal;
+            if (lastRawSessionText) {
+                var prevTrimmed = lastRawSessionText.trim();
+                var currTrimmed = rawFinal.trim();
+                if (prevTrimmed && currTrimmed.toLowerCase().startsWith(prevTrimmed.toLowerCase())) {
+                    var delta = currTrimmed.substring(prevTrimmed.length).trim();
+                    contribution = delta ? delta + ' ' : '';
+                    console.log('[Voice] Overlap stripped. Prev:', prevTrimmed, 'Delta:', delta);
+                }
             }
+
+            // Rebuild: lockedText (previous sessions) + this session's contribution
+            allFinalText = lockedText + (contribution.trim() ? postProcess(contribution) + ' ' : '');
 
             if (currentTextarea) {
                 currentTextarea.value = baseText + allFinalText + interimParts;
@@ -314,10 +297,13 @@ var VoiceInput = (function () {
 
         recognition.onerror = function (event) {
             if (event.error === 'no-speech' || event.error === 'aborted') return;
-            // Don't stop immediately on error, might be temporary
         };
 
         recognition.onend = function () {
+            // Lock in this session's contribution
+            lockedText = allFinalText;
+            lastRawSessionText = currentRawFinal;
+
             if (stopped) {
                 finalize();
                 return;
@@ -336,7 +322,7 @@ var VoiceInput = (function () {
                 return;
             }
 
-            // Restart listener (new session — processedFinalCount resets via new closure)
+            // Restart listener
             setTimeout(function () {
                 if (!stopped) beginListening();
             }, 300);
@@ -399,6 +385,8 @@ var VoiceInput = (function () {
         }
         currentTextarea = null;
         allFinalText = '';
+        lockedText = '';
+        lastRawSessionText = '';
         silenceCount = 0;
     }
 
