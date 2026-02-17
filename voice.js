@@ -270,24 +270,50 @@ var VoiceInput = (function () {
 
             currentRawFinal = rawFinal;
 
-            // Mobile overlap detection:
-            // Samsung browser restarts sessions rapidly, each re-transcribing
-            // the same audio. New session's text starts with previous session's text.
-            // Example: Session1='Dan', Session2='Dan itu ngaruh', Session3='Dan itu ngaruh ke stok'
-            // We strip the overlapping prefix to avoid duplication.
+            // Mobile overlap detection (Robust Word-Based)
             var contribution = rawFinal;
             if (lastRawSessionText) {
-                var prevTrimmed = lastRawSessionText.trim();
-                var currTrimmed = rawFinal.trim();
-                if (prevTrimmed && currTrimmed.toLowerCase().startsWith(prevTrimmed.toLowerCase())) {
-                    var delta = currTrimmed.substring(prevTrimmed.length).trim();
-                    contribution = delta ? delta + ' ' : '';
-                    console.log('[Voice] Overlap stripped. Prev:', prevTrimmed, 'Delta:', delta);
-                }
+                contribution = stripOverlap(lastRawSessionText, rawFinal);
             }
 
             // Rebuild: lockedText (previous sessions) + this session's contribution
             allFinalText = lockedText + (contribution.trim() ? postProcess(contribution) + ' ' : '');
+
+            // Helper function for overlap
+            function stripOverlap(prev, curr) {
+                var p = prev.trim();
+                var c = curr.trim();
+                if (!p || !c) return curr;
+
+                // 1. Direct Prefix match
+                if (c.toLowerCase().startsWith(p.toLowerCase())) {
+                    return curr.substring(prev.length).trim();
+                }
+
+                // 2. Word-based Suffix/Prefix match (for partial overlaps)
+                var pWords = p.toLowerCase().split(/\s+/);
+                var cWords = c.toLowerCase().split(/\s+/);
+                var maxWords = Math.min(pWords.length, cWords.length, 10); // Check last 10 words
+
+                for (var n = maxWords; n > 0; n--) {
+                    var suffix = pWords.slice(-n).join(' ');
+                    var prefix = cWords.slice(0, n).join(' ');
+                    if (suffix === prefix) {
+                        // Found overlap of n words. 
+                        // Return the substring of curr after these n words.
+                        // We use the original 'curr' string to preserve casing/spacing of the new part.
+                        // Rough logic: find index of Nth space? 
+                        // Better: split original curr and join rest.
+                        var words = curr.trim().split(/\s+/);
+                        if (words.length > n) {
+                            return words.slice(n).join(' ');
+                        } else {
+                            return ''; // Full overlap
+                        }
+                    }
+                }
+                return curr;
+            }
 
             if (currentTextarea) {
                 currentTextarea.value = baseText + allFinalText + interimParts;
