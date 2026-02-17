@@ -470,6 +470,8 @@
         </div>
     </div>
 
+    <!-- JSZip for extracting APK from ZIP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script>
         // ===== Browser Detection =====
         function detectBrowser() {
@@ -577,8 +579,17 @@
                     maskableIconUrl: iconUrl512,
                     monochromeIconUrl: iconUrl192,
                     shortcuts: [],
-                    signingMode: 'none',
-                    signing: null
+                    signingMode: 'new',
+                    signing: {
+                        file: null,
+                        alias: 'laporan-kr',
+                        fullName: 'Puskesmas Balas Klumprik',
+                        organization: 'Puskesmas Balas Klumprik',
+                        organizationalUnit: 'IT',
+                        countryCode: 'ID',
+                        keyPassword: 'puskesmas123',
+                        storePassword: 'puskesmas123'
+                    }
                 };
 
                 // Step 3: Call PWABuilder API
@@ -600,54 +611,101 @@
                     throw new Error(`Server error: ${response.status}`);
                 }
 
-                // Step 4: Download the APK
-                updateProgress(85, 'Mendownload file APK...');
+                // Step 4: Extract signed APK from ZIP
+                updateProgress(75, 'Mengekstrak file APK...');
 
-                const blob = await response.blob();
+                const zipBlob = await response.blob();
 
                 // Check if we got a valid response
-                if (blob.size < 1000) {
-                    // Might be an error JSON, try to read it
-                    const text = await blob.text();
+                if (zipBlob.size < 1000) {
+                    const text = await zipBlob.text();
                     try {
                         const errJson = JSON.parse(text);
                         throw new Error(errJson.message || errJson.error || 'APK generation failed');
                     } catch (e) {
                         if (e.message.includes('APK generation')) throw e;
-                        throw new Error('Received invalid response from server');
+                        throw new Error('Respon dari server tidak valid');
                     }
                 }
 
-                updateProgress(95, 'Mempersiapkan download...');
+                updateProgress(85, 'Menyiapkan file APK...');
 
-                // Determine filename
-                const contentDisp = response.headers.get('content-disposition');
-                let filename = 'Laporan-KR.apk';
-                if (contentDisp) {
-                    const match = contentDisp.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-                    if (match) filename = match[1].replace(/['"]/g, '');
+                // Use JSZip to extract only the signed APK
+                let apkBlob = null;
+                let apkFilename = 'Laporan-KR.apk';
+
+                try {
+                    const zip = await JSZip.loadAsync(zipBlob);
+
+                    // Find the signed APK (not the unsigned one)
+                    // PWABuilder ZIP contains: signed.apk, unsigned.apk, .aab, readme.html
+                    let apkFile = null;
+
+                    // Priority: signed APK > any APK that's not unsigned > first APK found
+                    for (const [filename, file] of Object.entries(zip.files)) {
+                        if (file.dir) continue;
+                        const lower = filename.toLowerCase();
+
+                        if (lower.endsWith('.apk')) {
+                            if (lower.includes('signed') && !lower.includes('unsigned')) {
+                                // Best: explicitly signed
+                                apkFile = file;
+                                break;
+                            } else if (!lower.includes('unsigned') && !apkFile) {
+                                // Good: not unsigned
+                                apkFile = file;
+                            } else if (!apkFile) {
+                                // Fallback: any APK
+                                apkFile = file;
+                            }
+                        }
+                    }
+
+                    // If no signed APK found, try any APK (even unsigned - better than nothing)
+                    if (!apkFile) {
+                        for (const [filename, file] of Object.entries(zip.files)) {
+                            if (!file.dir && filename.toLowerCase().endsWith('.apk')) {
+                                apkFile = file;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (apkFile) {
+                        updateProgress(92, 'Mengekstrak APK...');
+                        const apkData = await apkFile.async('blob');
+                        apkBlob = new Blob([apkData], { type: 'application/vnd.android.package-archive' });
+                        apkFilename = 'Laporan-KR.apk';
+                    } else {
+                        throw new Error('File APK tidak ditemukan di dalam package');
+                    }
+                } catch (zipError) {
+                    // If JSZip fails (maybe it's not actually a ZIP), try downloading as-is
+                    console.warn('ZIP extraction failed, downloading raw file:', zipError);
+                    if (zipBlob.type === 'application/vnd.android.package-archive' || zipBlob.size > 100000) {
+                        apkBlob = zipBlob;
+                    } else {
+                        throw new Error('Gagal mengekstrak APK: ' + zipError.message);
+                    }
                 }
 
-                // Check if it's a zip (PWABuilder returns zip with both APK and AAB)
-                if (blob.type === 'application/zip' || filename.endsWith('.zip')) {
-                    filename = 'Laporan-KR-Android.zip';
-                }
+                updateProgress(97, 'Memulai download...');
 
-                // Trigger download
-                const url = URL.createObjectURL(blob);
+                // Trigger download of the APK
+                const url = URL.createObjectURL(apkBlob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = filename;
+                a.download = apkFilename;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
-                URL.revokeObjectURL(url);
+                setTimeout(() => URL.revokeObjectURL(url), 5000);
 
                 updateProgress(100, 'Download selesai!');
 
                 // Show success
                 statusMsg.className = 'status-msg success';
-                statusMsg.innerHTML = '✅ <b>APK berhasil didownload!</b><br>Buka file yang didownload untuk install.';
+                statusMsg.innerHTML = '✅ <b>File Laporan-KR.apk berhasil didownload!</b><br>Buka notifikasi download untuk install.';
                 statusMsg.style.display = 'block';
 
                 // Show install guide

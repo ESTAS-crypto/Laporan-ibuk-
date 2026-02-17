@@ -1,5 +1,5 @@
 // ===== SERVICE WORKER - Offline Cache =====
-const CACHE_NAME = 'laporan-kr-v13';
+const CACHE_NAME = 'laporan-kr-v14';
 
 // Files to cache for offline use
 const STATIC_ASSETS = [
