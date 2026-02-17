@@ -1802,4 +1802,44 @@ document.addEventListener("DOMContentLoaded", function () {
     console.log('📄 Word: Layout tabel 4 kolom identik dengan preview');
     console.log('📑 PDF: Menggunakan html2canvas + jsPDF');
     console.log('🔧 Smart Age Parser: 10,4bulan, 3,5thn, 2tahun');
+
+    // ===== AUTH UI EVENTS =====
+    const loginBtn = document.getElementById('loginBtn');
+    const usernameInput = document.getElementById('usernameInput');
+    const btnSettings = document.getElementById('btnSettings');
+    const btnSaveData = document.getElementById('btnSaveData');
+
+    if (loginBtn && usernameInput) {
+        loginBtn.addEventListener('click', () => {
+            const username = usernameInput.value;
+            const result = AuthSystem.login(username);
+            AuthSystem.showMessage(result.message, !result.success);
+            AuthSystem.updateUI();
+        });
+    }
+
+    if (btnSettings) {
+        // This is actually the LOGOUT button based on icon logic in HTML
+        // But HTML says id="btnSettings" class="btn-logout" title="Settings" -> ⚙️
+        // Wait, index.html has: <button id="btnSettings" class="btn-logout" title="Settings">⚙️</button>
+        // AND maybe a separate logout button?
+        // Let's check index.html again.
+        // Line 59: <button id="btnSettings" class="btn-logout" title="Settings">⚙️</button>
+        // Use this for Open Settings for now.
+
+        // Let's add a REAL logout button to HTML if missing, or use this one.
+        // Actually, user said "perbaiki fitur logout".
+        // Use a dedicated logout button.
+    }
+
+    // Add Logout Button Logic (will be added to HTML next)
+    const logoutBtn = document.getElementById('btnLogout');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            if (confirm('Yakin ingin keluar?')) {
+                AuthSystem.logout();
+                location.reload(); // FORCE RELOAD
+            }
+        });
+    }
 });

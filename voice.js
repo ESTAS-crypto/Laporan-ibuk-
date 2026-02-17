@@ -30,13 +30,35 @@ var VoiceInput = (function () {
         updateUiState();
     }
 
-    function saveSettings(enabled, key) {
+    async function saveSettings(enabled, key) {
         useAI = enabled;
         groqKey = key;
         localStorage.setItem('voice_use_ai', enabled);
         localStorage.setItem('voice_groq_key', key);
         updateUiState();
-        showMsg('✅ Pengaturan disimpan!');
+
+        if (enabled && key) {
+            if (key.startsWith('gsk_')) {
+                showMsg('🔄 Menguji koneksi API...');
+                try {
+                    // Simple test call
+                    var response = await fetch('https://api.groq.com/openai/v1/models', {
+                        headers: { 'Authorization': 'Bearer ' + key }
+                    });
+                    if (response.ok) {
+                        showMsg('✅ Terhubung! API Key valid.');
+                    } else {
+                        showMsg('❌ Gagal terhubung. Cek API Key.');
+                    }
+                } catch (e) {
+                    showMsg('⚠️ Koneksi Error');
+                }
+            } else {
+                showMsg('⚠️ Format API Key sepertinya salah (harus gsk_...)');
+            }
+        } else {
+            showMsg('✅ Pengaturan disimpan!');
+        }
     }
 
     function updateUiState() {
