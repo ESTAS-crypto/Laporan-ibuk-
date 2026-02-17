@@ -157,26 +157,33 @@ var VoiceInput = (function () {
         cleanupRecognition();
         releaseKeepAlive();
 
-        try {
-            console.log('[Voice] Acquiring mic...');
-            keepAliveStream = await navigator.mediaDevices.getUserMedia(AUDIO_CONSTRAINTS);
+        // Detect Mobile (Android/iOS)
+        var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
-            // Activate Audio Pipeline
-            var ctx = new AudioContext({ sampleRate: 16000 });
-            var source = ctx.createMediaStreamSource(keepAliveStream);
-            var compressor = ctx.createDynamicsCompressor();
-            compressor.threshold.setValueAtTime(-50, ctx.currentTime);
-            source.connect(compressor);
+        // Skip audio pipeline on mobile (prevent echo & mic conflict)
+        if (!isMobile) {
+            try {
+                console.log('[Voice] Acquiring mic (Desktop keep-alive)...');
+                keepAliveStream = await navigator.mediaDevices.getUserMedia(AUDIO_CONSTRAINTS);
 
-            // Fix echo: Mute output but keep graph active
-            var mute = ctx.createGain();
-            mute.gain.value = 0;
-            compressor.connect(mute);
-            mute.connect(ctx.destination);
-        } catch (err) {
-            console.error('[Voice] Mic error:', err);
-            showMsg('🚫 Mikrofon error.');
-            return;
+                // Activate Audio Pipeline
+                var ctx = new AudioContext({ sampleRate: 16000 });
+                var source = ctx.createMediaStreamSource(keepAliveStream);
+                var compressor = ctx.createDynamicsCompressor();
+                compressor.threshold.setValueAtTime(-50, ctx.currentTime);
+                source.connect(compressor);
+
+                // Fix echo: Mute output but keep graph active
+                var mute = ctx.createGain();
+                mute.gain.value = 0; // Absolute silence
+                compressor.connect(mute);
+                mute.connect(ctx.destination);
+            } catch (err) {
+                console.warn('[Voice] Mic keep-alive failed (non-fatal):', err);
+                // Continue anyway - SpeechRecognition might still work
+            }
+        } else {
+            console.log('[Voice] Mobile detected: Skipping keep-alive audio pipeline');
         }
 
         await delay(400);
