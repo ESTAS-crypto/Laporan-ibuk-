@@ -146,6 +146,12 @@ var VoiceInput = (function () {
         var ta = document.getElementById(textareaId);
         if (!ta) return;
 
+        // Check Connection (PWA Requirement)
+        if (!navigator.onLine) {
+            showMsg('🌐 Voice butuh internet.');
+            return;
+        }
+
         if (isCorrecting) return; // Wait for AI
 
         cleanupRecognition();

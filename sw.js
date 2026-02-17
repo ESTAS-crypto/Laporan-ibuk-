@@ -70,6 +70,7 @@ self.addEventListener('activate', (event) => {
 });
 
 // Fetch: Cache First — ONLY for our own files and known CDNs
+// Fetch: Smart Strategy
 self.addEventListener('fetch', (event) => {
     // Skip non-GET requests
     if (event.request.method !== 'GET') return;
@@ -80,7 +81,6 @@ self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
 
     // ONLY handle our own origin and known CDN domains
-    // Let everything else (HuggingFace model downloads, etc.) pass through untouched!
     const isOwnOrigin = url.origin === self.location.origin;
     const isKnownCDN = url.hostname === 'unpkg.com' ||
         url.hostname === 'cdnjs.cloudflare.com' ||
@@ -88,42 +88,34 @@ self.addEventListener('fetch', (event) => {
 
     if (!isOwnOrigin && !isKnownCDN) return;
 
+    // Network First strategy for HTML and JS files (vital for updates)
+    if (url.pathname.endsWith('.html') || url.pathname.endsWith('.js') || url.pathname === '/') {
+        event.respondWith(
+            fetch(event.request)
+                .then((networkResponse) => {
+                    return caches.open(CACHE_NAME).then((cache) => {
+                        cache.put(event.request, networkResponse.clone());
+                        return networkResponse;
+                    });
+                })
+                .catch(() => {
+                    return caches.match(event.request);
+                })
+        );
+        return;
+    }
+
+    // Cache First for other assets (images, fonts, libs)
     event.respondWith(
         caches.match(event.request)
             .then((cachedResponse) => {
-                if (cachedResponse) {
-                    // Serve from cache, update in background
-                    fetch(event.request)
-                        .then((networkResponse) => {
-                            if (networkResponse && networkResponse.status === 200) {
-                                caches.open(CACHE_NAME)
-                                    .then((cache) => cache.put(event.request, networkResponse));
-                            }
-                        })
-                        .catch(() => { });
-
-                    return cachedResponse;
-                }
-
-                // Not cached — fetch from network
-                return fetch(event.request)
-                    .then((networkResponse) => {
-                        if (networkResponse && networkResponse.status === 200) {
-                            const clone = networkResponse.clone();
-                            caches.open(CACHE_NAME)
-                                .then((cache) => cache.put(event.request, clone));
-                        }
+                if (cachedResponse) return cachedResponse;
+                return fetch(event.request).then((networkResponse) => {
+                    return caches.open(CACHE_NAME).then((cache) => {
+                        cache.put(event.request, networkResponse.clone());
                         return networkResponse;
-                    })
-                    .catch(() => {
-                        // Offline fallback for HTML only
-                        if (event.request.headers.get('accept') &&
-                            event.request.headers.get('accept').includes('text/html')) {
-                            return caches.match('./index.html');
-                        }
-                        // Return proper 503 for other failed requests
-                        return new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
                     });
+                });
             })
     );
 });
