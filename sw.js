@@ -1,5 +1,5 @@
 // ===== SERVICE WORKER - Offline Cache =====
-const CACHE_NAME = 'laporan-kr-v8';
+const CACHE_NAME = 'laporan-kr-v9';
 
 // Files to cache for offline use
 const STATIC_ASSETS = [
@@ -9,7 +9,7 @@ const STATIC_ASSETS = [
     './script.js',
     './auth.js',
     './stylepdf.js',
-    './voice.js',
+    './voice-core.js',
     './footer.html',
     './manifest.json',
     './qris.jpg',

@@ -1,5 +1,5 @@
-// ===== VOICE.JS v10.0 — Real-Time AI Correction (Groq) =====
-// Web Speech API + Enhanced Audio + Continuous Groq AI
+// ===== VOICE.JS v9.3 — Hybrid AI Correction (Groq) =====
+// Web Speech API + Enhanced Audio + Groq AI Post-processing
 
 var VoiceInput = (function () {
     var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -9,11 +9,9 @@ var VoiceInput = (function () {
     var baseText = '';
     var recognition = null;
     var allFinalText = '';
-    var pendingText = ''; // Text waiting for AI
     var stopped = false;
     var silenceCount = 0;
-    var MAX_SILENCE_FOR_AI = 3; // Trigger AI after 3s silence
-    var MAX_SILENCE_STOP = 10;   // Stop recording after 10s silence
+    var MAX_SILENCE = 8;
     var keepAliveStream = null;
 
     // AI Correction State
@@ -45,23 +43,25 @@ var VoiceInput = (function () {
         var toggle = document.getElementById('aiToggle');
         var keyInput = document.getElementById('groqKey');
 
-        if (status) status.textContent = useAI ? 'Aktif (Real-Time)' : 'Non-aktif';
+        if (status) status.textContent = useAI ? 'Aktif (Hybrid Mode)' : 'Non-aktif';
         if (inputGroup) inputGroup.style.display = useAI ? 'block' : 'none';
         if (toggle) toggle.checked = useAI;
         if (keyInput) keyInput.value = groqKey;
     }
 
-    async function correctTextWithAI(text, ta, isPartial = false) {
-        // Robust check: ensure ta is valid
+    async function correctTextWithAI(text, ta) {
+        // Robust check: ensure ta is valid and still in document or at least has classList
         if (!useAI || !groqKey || !text || text.length < 5 || !ta || !ta.classList) return;
 
-        // Visual feedback without disabling input if partial
+        // Visual feedback
+        try {
+            ta.classList.add('ai-correcting');
+            ta.disabled = true;
+        } catch (e) {
+            console.warn('[Voice] UI update failed:', e);
+            return;
+        }
         isCorrecting = true;
-        if (!isPartial) ta.disabled = true;
-
-        var originalBtnText = activeBtn ? activeBtn.querySelector('.voice-btn-text').textContent : '';
-        if (activeBtn) activeBtn.querySelector('.voice-btn-text').textContent = '🤖';
-
         console.log('[Voice] 🤖 AI Correcting:', text);
 
         try {
@@ -76,50 +76,40 @@ var VoiceInput = (function () {
                     messages: [
                         {
                             role: 'system',
-                            content: 'Anda adalah asisten medis profesional Indonesia. Tugas Anda memperbaiki transkrip suara (STT) agar akurat secara medis dan tata bahasa.\n\nKAMUS ISTILAH (Gunakan ejaan ini):\n- Hipertensi, Diabetes Melitus, Kolesterol, Asam Urat, Skizofrenia\n- Paracetamol, Amoksisilin, Captopril, Metformin, Amlodipine\n- Puskesmas, Posyandu, Lansia, Balita, Ibu Hamil\n- Kunjungan Rumah, Rawat Jalan, Rujukan\n\nATURAN FORMAT:\n1. Angka Tensi: "seratus dua puluh per delapan puluh" -> "120/80 mmHg"\n2. Gula Darah: "gula darah sewaktu dua ratus" -> "GDS 200 mg/dL"\n3. Suhu: "tiga puluh enam koma lima" -> "36.5°C"\n4. Berat: "lima puluh kilo" -> "50 kg"\n\nINSTRUKSI:\n- Perbaiki typo dan ejaan yang salah.\n- Hapus kata filler (anu, hmm, apa itu).\n- JANGAN mengubah data/angka.\n- Output HANYA teks hasil perbaikan tanpa tanda kutip.'
+                            content: 'Anda adalah asisten medis Indonesia. Tugas: Perbaiki tata bahasa, ejaan, dan istilah medis dari teks input. JANGAN mengubah makna. JANGAN menambah komentar. Output HANYA teks yang sudah diperbaiki.'
                         },
                         {
                             role: 'user',
                             content: text
                         }
                     ],
-                    temperature: 0.1
+                    temperature: 0.2
                 })
             });
 
             var data = await response.json();
             if (data.choices && data.choices[0]) {
                 var corrected = data.choices[0].message.content.trim();
+                // Remove quotes if AI added them
                 corrected = corrected.replace(/^"|"$/g, '');
 
                 console.log('[Voice] ✨ Result:', corrected);
 
-                // Update text
-                // If partial (real-time), we replace the finalized text block
-                if (isPartial) {
-                    allFinalText = corrected;
-                } else {
-                    allFinalText = corrected;
-                }
-
-                // Force update UI
-                if (currentTextarea) {
-                    currentTextarea.value = baseText + allFinalText + (isRecording ? ' ' : '');
-                    currentTextarea.dispatchEvent(new Event('change', { bubbles: true }));
-                }
-
+                // Update textarea with corrected text
+                // Note: currentTextarea is null here, but ta is the valid element we captured
+                ta.value = baseText + corrected;
+                allFinalText = corrected; // Update memory
             } else {
                 console.warn('[Voice] AI Error:', data);
+                showMsg('⚠️ AI Error: ' + (data.error?.message || 'Unknown'));
             }
         } catch (err) {
             console.error('[Voice] Network Error:', err);
         } finally {
-            if (!isPartial && ta) {
-                ta.classList.remove('ai-correcting');
-                ta.disabled = false;
-            }
+            ta.classList.remove('ai-correcting');
+            ta.disabled = false;
             isCorrecting = false;
-            if (activeBtn) activeBtn.querySelector('.voice-btn-text').textContent = originalBtnText || '⏹️';
+            ta.dispatchEvent(new Event('change', { bubbles: true }));
         }
     }
 
@@ -168,19 +158,21 @@ var VoiceInput = (function () {
             return;
         }
 
-        if (isCorrecting && !stopped) return;
+        if (isCorrecting) return; // Wait for AI
 
         cleanupRecognition();
         releaseKeepAlive();
 
-        // ─── CRITICAL FIX: Echo & Mobile ───
+        // Detect Mobile (Android/iOS)
         var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
+        // Skip audio pipeline on mobile (prevent echo & mic conflict)
         if (!isMobile) {
             try {
                 console.log('[Voice] Acquiring mic (Desktop keep-alive)...');
                 keepAliveStream = await navigator.mediaDevices.getUserMedia(AUDIO_CONSTRAINTS);
 
+                // Activate Audio Pipeline
                 var ctx = new AudioContext({ sampleRate: 16000 });
                 var source = ctx.createMediaStreamSource(keepAliveStream);
                 var compressor = ctx.createDynamicsCompressor();
@@ -188,12 +180,15 @@ var VoiceInput = (function () {
                 source.connect(compressor);
 
                 // Fix echo 100%: Route to a dummy destination (Nowhere)
+                // Do NOT connect to ctx.destination (Speakers)
                 var silentDest = ctx.createMediaStreamDestination();
                 compressor.connect(silentDest);
 
+                // Keep context running
                 if (ctx.state === 'suspended') ctx.resume();
             } catch (err) {
                 console.warn('[Voice] Mic keep-alive failed (non-fatal):', err);
+                // Continue anyway - SpeechRecognition might still work
             }
         } else {
             console.log('[Voice] Mobile detected: Skipping keep-alive audio pipeline');
@@ -213,7 +208,7 @@ var VoiceInput = (function () {
         btn.querySelector('.voice-btn-text').textContent = '⏹️';
 
         beginListening();
-        showMsg('🎙️ Bicara sekarang...' + (useAI ? ' (Real-Time Mode)' : ''));
+        showMsg('🎙️ Bicara sekarang...' + (useAI ? ' (Hybrid Mode ON)' : ''));
     }
 
     function beginListening() {
@@ -226,7 +221,7 @@ var VoiceInput = (function () {
         recognition.maxAlternatives = 3;
 
         recognition.onresult = function (event) {
-            silenceCount = 0; // Reset silence on any input
+            silenceCount = 0;
             var finalParts = '';
             var interimParts = '';
 
@@ -239,35 +234,19 @@ var VoiceInput = (function () {
                 }
             }
 
-            // Update visible text
-            if (finalParts) {
-                var cleanPart = postProcess(finalParts);
-                allFinalText += cleanPart;
-                // Don't duplicate! allFinalText grows.
-                // Wait, SpeechRecognition with continuous:true returns ALL results from start? 
-                // NO, we must handle aggregation carefully.
-                // REBUILD from event.results implies it holds history relative to session start.
-
-                // Let's rebuild properly:
-                var fullSessionText = '';
-                for (var j = 0; j < event.results.length; j++) {
-                    if (event.results[j].isFinal) {
-                        fullSessionText += pickBestAlternative(event.results[j]) + ' ';
-                    }
-                }
-                allFinalText = postProcess(fullSessionText);
-            }
+            allFinalText = postProcess(finalParts);
 
             if (currentTextarea) {
                 currentTextarea.value = baseText + allFinalText + interimParts;
-                currentTextarea.scrollTop = currentTextarea.scrollHeight;
+                currentTextarea.style.height = 'auto';
+                currentTextarea.style.height = currentTextarea.scrollHeight + 'px';
             }
         };
 
         recognition.onerror = function (event) {
             if (event.error === 'no-speech' || event.error === 'aborted') return;
-            // showMsg('⚠️ Error: ' + event.error);
-            // Don't stop immediately on error, might be temporary
+            showMsg('⚠️ Error: ' + event.error);
+            fullStop();
         };
 
         recognition.onend = function () {
@@ -276,21 +255,11 @@ var VoiceInput = (function () {
                 return;
             }
             silenceCount++;
-
-            // Continuous AI Trigger
-            if (useAI && silenceCount >= MAX_SILENCE_FOR_AI && allFinalText.length > 5 && !isCorrecting) {
-                console.log('[Voice] Silence detected, triggering partial AI correction...');
-                correctTextWithAI(allFinalText, currentTextarea, true);
-                // Don't stop, just let it loop back
-            }
-
-            if (silenceCount > MAX_SILENCE_STOP) {
-                showMsg('⏸️ Hening (Stop).');
+            if (silenceCount > MAX_SILENCE) {
+                showMsg('⏸️ Hening.');
                 fullStop();
                 return;
             }
-
-            // Restart listener
             setTimeout(function () {
                 if (!stopped) beginListening();
             }, 300);
@@ -316,17 +285,17 @@ var VoiceInput = (function () {
 
     function finalize() {
         if (currentTextarea) {
-            var ta = currentTextarea;
+            var ta = currentTextarea; // Capture reference
             var finalText = postProcess(allFinalText);
 
             ta.value = baseText + finalText;
             ta.dispatchEvent(new Event('change', { bubbles: true }));
 
-            fullStop();
+            fullStop(); // Resets global currentTextarea to null
 
-            // Final AI Correction (if not already correcting or just to be sure)
-            if (useAI && finalText.trim().length > 5 && ta && !isCorrecting) {
-                correctTextWithAI(finalText, ta, false);
+            // Trigger AI Correction if enabled
+            if (useAI && finalText.trim().length > 5 && ta) {
+                correctTextWithAI(finalText, ta);
             }
         } else {
             fullStop();
@@ -417,7 +386,7 @@ var VoiceInput = (function () {
         toggle.onchange = function () {
             var isChecked = this.checked;
             document.getElementById('apiKeyGroup').style.display = isChecked ? 'block' : 'none';
-            document.getElementById('aiStatusText').textContent = isChecked ? 'Aktif (Real-Time)' : 'Non-aktif';
+            document.getElementById('aiStatusText').textContent = isChecked ? 'Aktif (Hybrid Mode)' : 'Non-aktif';
         };
 
         save.onclick = function () {
@@ -439,5 +408,5 @@ var VoiceInput = (function () {
 document.addEventListener('DOMContentLoaded', function () {
     VoiceInput.initForLaporan(1);
     VoiceInput.initSettings();
-    console.log('[Voice] v10.0 Real-Time Ready');
+    console.log('[Voice] v9.3 Hybrid Ready');
 });
