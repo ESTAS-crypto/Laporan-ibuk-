@@ -13,6 +13,7 @@ var VoiceInput = (function () {
     var lastRawSessionText = '';  // Raw final text from previous session (for overlap detection)
     var stopped = false;
     var silenceCount = 0;
+    var lastSessionStart = 0; // Prevent rapid restart loops
     var MAX_SILENCE = 8;
     var keepAliveStream = null;
 
@@ -205,6 +206,7 @@ var VoiceInput = (function () {
         lockedText = '';
         lastRawSessionText = '';
         silenceCount = 0;
+        lastSessionStart = 0;
         stopped = false;
         isRecording = true;
         activeBtn = btn;
@@ -223,6 +225,7 @@ var VoiceInput = (function () {
         recognition.continuous = true;
         recognition.interimResults = true;
         recognition.maxAlternatives = 3;
+        lastSessionStart = Date.now();
 
         // This session's raw final text (rebuilt from event.results each time)
         var currentRawFinal = '';
@@ -245,9 +248,10 @@ var VoiceInput = (function () {
             currentRawFinal = rawFinal;
 
             // Mobile overlap detection (Robust Word-Based)
+            // Check against lockedText (Full History) to detect overlaps at session boundary
             var contribution = rawFinal;
-            if (lastRawSessionText) {
-                contribution = stripOverlap(lastRawSessionText, rawFinal);
+            if (lockedText) {
+                contribution = stripOverlap(lockedText, rawFinal);
             }
 
             // Rebuild: lockedText (previous sessions) + this session's contribution
@@ -264,18 +268,17 @@ var VoiceInput = (function () {
                     return curr.substring(prev.length).trim();
                 }
 
-                // 2. Word-based Suffix/Prefix match (for partial overlaps)
+                // 2. Word-based Suffix/Prefix match (for partial overlaps from END of prev)
                 var pWords = p.toLowerCase().split(/\s+/);
                 var cWords = c.toLowerCase().split(/\s+/);
-                var maxWords = Math.min(pWords.length, cWords.length, 10); // Check last 10 words
+                // Only check the last few words
+                var maxWords = Math.min(pWords.length, cWords.length, 10);
 
                 for (var n = maxWords; n > 0; n--) {
                     var suffix = pWords.slice(-n).join(' ');
                     var prefix = cWords.slice(0, n).join(' ');
                     if (suffix === prefix) {
                         // Found overlap of n words. 
-                        // Return the substring of curr after these n words.
-                        // We use the original 'curr' string to preserve casing/spacing of the new part.
                         var words = curr.trim().split(/\s+/);
                         if (words.length > n) {
                             return words.slice(n).join(' ');
@@ -284,6 +287,15 @@ var VoiceInput = (function () {
                         }
                     }
                 }
+
+                // 3. Last resort fallback
+                if (lastRawSessionText) {
+                    var lr = lastRawSessionText.trim();
+                    if (lr && c.toLowerCase().startsWith(lr.toLowerCase())) {
+                        return curr.substring(lastRawSessionText.length).trim();
+                    }
+                }
+
                 return curr;
             }
 
@@ -309,6 +321,15 @@ var VoiceInput = (function () {
                 finalize();
                 return;
             }
+
+            var duration = Date.now() - lastSessionStart;
+            if (duration < 1000) {
+                console.warn('[Voice] Session too short (' + duration + 'ms). Stopping loop.');
+                showMsg('⚠️ Mic stop (Browser limit). Tekan lagi.');
+                fullStop();
+                return;
+            }
+
             silenceCount++;
             if (silenceCount > MAX_SILENCE) {
                 showMsg('⏸️ Hening.');

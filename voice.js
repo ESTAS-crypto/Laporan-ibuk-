@@ -13,6 +13,7 @@ var VoiceInput = (function () {
     var lastRawSessionText = '';  // Raw final text from previous session (for overlap detection)
     var stopped = false;
     var silenceCount = 0;
+    var lastSessionStart = 0; // Prevent rapid restart loops
     var MAX_SILENCE_FOR_AI = 3; // Trigger AI after 3s silence
     var MAX_SILENCE_STOP = 10;   // Stop recording after 10s silence
     var keepAliveStream = null;
@@ -231,6 +232,7 @@ var VoiceInput = (function () {
         lockedText = '';
         lastRawSessionText = '';
         silenceCount = 0;
+        lastSessionStart = 0;
         stopped = false;
         isRecording = true;
         activeBtn = btn;
@@ -249,6 +251,7 @@ var VoiceInput = (function () {
         recognition.continuous = true;
         recognition.interimResults = true;
         recognition.maxAlternatives = 3;
+        lastSessionStart = Date.now();
 
         // This session's raw final text (rebuilt from event.results each time)
         var currentRawFinal = '';
@@ -271,9 +274,10 @@ var VoiceInput = (function () {
             currentRawFinal = rawFinal;
 
             // Mobile overlap detection (Robust Word-Based)
+            // Check against lockedText (Full History) to detect overlaps at session boundary
             var contribution = rawFinal;
-            if (lastRawSessionText) {
-                contribution = stripOverlap(lastRawSessionText, rawFinal);
+            if (lockedText) {
+                contribution = stripOverlap(lockedText, rawFinal);
             }
 
             // Rebuild: lockedText (previous sessions) + this session's contribution
@@ -312,6 +316,14 @@ var VoiceInput = (function () {
                         }
                     }
                 }
+                // 3. Last resort: Check if the *entirety* of the last raw session is repeated
+                if (typeof lastRawSessionText !== 'undefined' && lastRawSessionText) {
+                    var lr = lastRawSessionText.trim();
+                    if (lr && c.toLowerCase().startsWith(lr.toLowerCase())) {
+                        return curr.substring(lastRawSessionText.length).trim();
+                    }
+                }
+
                 return curr;
             }
 
@@ -328,12 +340,20 @@ var VoiceInput = (function () {
         recognition.onend = function () {
             // Lock in this session's contribution
             lockedText = allFinalText;
-            lastRawSessionText = currentRawFinal;
 
             if (stopped) {
                 finalize();
                 return;
             }
+
+            var duration = Date.now() - lastSessionStart;
+            if (duration < 1000) {
+                console.warn('[Voice] Session too short (' + duration + 'ms). Stopping loop.');
+                showMsg('⚠️ Mic stop (Browser limit). Tekan lagi.');
+                fullStop();
+                return;
+            }
+
             silenceCount++;
 
             // Continuous AI Trigger
